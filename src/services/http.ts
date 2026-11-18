@@ -22,9 +22,18 @@ http.interceptors.request.use((config) => {
 })
 http.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const statusCode = error.response?.status || 0
-    const body = error.response?.data
+    let body = error.response?.data
+    // Les réponses en responseType 'blob' (ex. /tables/:id/qr.png) renvoient aussi
+    // l'erreur JSON du backend sous forme de Blob : on la décode pour garder son message.
+    if (body instanceof Blob) {
+      try {
+        body = JSON.parse(await body.text())
+      } catch {
+        body = undefined
+      }
+    }
     if (statusCode === 401) {
       setToken('')
       window.dispatchEvent(new Event('session-expired'))
