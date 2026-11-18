@@ -1,6 +1,9 @@
 import { http, DEMO } from './http'
 import { demo } from './demo'
 import type { Entity, Resource, List, Ticket, User, PaymentMethod, Stats } from '../types'
+type RawStats = Omit<Stats, 'salesByDay'> & {
+  salesByDay: { date: string; sales?: number; total?: number }[]
+}
 async function all<T>(path: string): Promise<T[]> {
   let page = 1
   const result: T[] = []
@@ -81,5 +84,14 @@ export const api = {
   stats: (from: string, to: string) =>
     DEMO
       ? demo.stats(from, to)
-      : http.get<Stats>('/dashboard/stats', { params: { from, to } }).then((r) => r.data),
+      : http.get<RawStats>('/dashboard/stats', { params: { from, to } }).then(
+          (r): Stats => ({
+            ...r.data,
+            // le backend renvoie { date, sales, ticketsCount } ; l'écran lit { date, total }
+            salesByDay: r.data.salesByDay.map((d) => ({
+              date: d.date,
+              total: d.total ?? d.sales ?? 0,
+            })),
+          }),
+        ),
 }
