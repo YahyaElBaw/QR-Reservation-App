@@ -5,6 +5,7 @@ import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
 @Injectable()
 export class CloudinaryService {
   private readonly logger = new Logger(CloudinaryService.name);
+  private readonly defaultFolder: string;
 
   constructor(config: ConfigService) {
     cloudinary.config({
@@ -13,12 +14,14 @@ export class CloudinaryService {
       api_secret: config.getOrThrow<string>('CLOUDINARY_API_SECRET'),
       secure: true,
     });
+    this.defaultFolder = config.get<string>('CLOUDINARY_FOLDER') || 'QrCodeApp';
   }
 
-  upload(buffer: Buffer, folder = 'qr-restaurant/products'): Promise<UploadApiResponse> {
+  upload(buffer: Buffer, folder?: string): Promise<UploadApiResponse> {
+    const uploadFolder = folder || this.defaultFolder;
     return new Promise((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder, resource_type: 'image' }, (err, result) => {
+        .upload_stream({ folder: uploadFolder, resource_type: 'image' }, (err, result) => {
           if (err || !result) return reject(err ?? new Error('Cloudinary upload failed'));
           resolve(result);
         })

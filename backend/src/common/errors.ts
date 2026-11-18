@@ -3,6 +3,7 @@ import { HttpException } from '@nestjs/common';
 export type ErrorCode =
   | 'VALIDATION_ERROR' | 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'QR_INVALID'
   | 'TICKET_NOT_OPEN' | 'TICKET_TABLE_MISMATCH' | 'PRODUCT_UNAVAILABLE' | 'TABLE_HAS_OPEN_TICKET'
+  | 'TABLE_OCCUPIED_BY_ANOTHER_CLIENT'
   | 'TOO_MANY_REQUESTS' | 'INTERNAL_ERROR';
 
 export class AppException extends HttpException {

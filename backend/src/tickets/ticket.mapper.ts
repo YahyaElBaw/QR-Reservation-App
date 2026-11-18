@@ -10,6 +10,7 @@ export interface ItemView {
 export interface TicketView {
   _id: string; ticketNumber: string; tableId: string; userId: string | null; status: TicketStatus;
   total: number; paymentMethod: PaymentMethod | null; paidAt: Date | null; closedAt: Date | null;
+  clientIp?: string | null; clientDeviceId?: string | null;
   items: ItemView[]; createdAt: Date; updatedAt: Date;
 }
 
@@ -37,6 +38,8 @@ export const ticketView = (t: TicketDocument, items: TicketItemDocument[] = []):
   paymentMethod: t.paymentMethod ?? null,
   paidAt: t.paidAt ?? null,
   closedAt: t.closedAt ?? null,
+  clientIp: t.clientIp ?? null,
+  clientDeviceId: t.clientDeviceId ?? null,
   items: items.map(itemView),
   createdAt: t.createdAt,
   updatedAt: t.updatedAt,

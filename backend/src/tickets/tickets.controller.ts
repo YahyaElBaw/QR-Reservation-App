@@ -1,9 +1,10 @@
 import {
-  Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Res,
+  Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query, Req, Res,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { extractClientIp } from '../common/ip';
 import { AuthUser } from '../common/auth-user';
 import { CurrentUser, Public, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
@@ -59,18 +60,23 @@ export class PublicTicketsController {
   constructor(private readonly tickets: TicketsService) {}
 
   @Public() @Get(':qrToken')
-  table(@Param('qrToken') qrToken: string) { return this.tickets.publicTable(qrToken); }
+  table(@Param('qrToken') qrToken: string, @Req() req: Request, @Query('deviceId') deviceId?: string) {
+    const ip = extractClientIp(req);
+    return this.tickets.publicTable(qrToken, ip, deviceId);
+  }
 
   /** 20 orders / min per IP + qrToken */
   @Public() @Post(':qrToken/orders')
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  order(@Param('qrToken') qrToken: string, @Body() dto: CreateOrderDto) {
-    return this.tickets.placeOrder(qrToken, dto);
+  order(@Param('qrToken') qrToken: string, @Body() dto: CreateOrderDto, @Req() req: Request) {
+    const ip = extractClientIp(req);
+    return this.tickets.placeOrder(qrToken, dto, ip);
   }
 
   /** Returns the ticket or a literal JSON null. */
   @Public() @Get(':qrToken/ticket')
-  async ticket(@Param('qrToken') qrToken: string, @Res() res: Response): Promise<void> {
-    res.status(200).json(await this.tickets.publicTicket(qrToken));
+  async ticket(@Param('qrToken') qrToken: string, @Req() req: Request, @Res() res: Response): Promise<void> {
+    const ip = extractClientIp(req);
+    res.status(200).json(await this.tickets.publicTicket(qrToken, ip));
   }
 }

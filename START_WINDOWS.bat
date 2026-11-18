@@ -1,6 +1,6 @@
 @echo off
-cd /d "%~dp0"
-echo Medina - Frontend Vue
+cd /d "%~dp0frontend"
+echo Medina - Frontend Vue 3
 where node.exe >nul 2>nul
 if errorlevel 1 (
   echo Installez Node.js 24 LTS depuis https://nodejs.org/ puis relancez ce fichier.

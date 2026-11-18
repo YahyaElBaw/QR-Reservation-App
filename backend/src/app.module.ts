@@ -20,7 +20,12 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, validationSchema: envSchema, validationOptions: { abortEarly: false } }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
+      validationSchema: envSchema,
+      validationOptions: { abortEarly: false },
+    }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (c: ConfigService) => ({ uri: c.getOrThrow<string>('MONGO_URI') }),

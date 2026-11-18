@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 @Schema({ timestamps: true, toJSON: { versionKey: false } })
 export class Product {
@@ -10,7 +10,7 @@ export class Product {
   @Prop({ type: String }) imageUrl?: string;
   @Prop({ type: String }) imagePublicId?: string;
   @Prop({ type: Boolean, default: true }) available: boolean;
-  @Prop({ type: Types.ObjectId, ref: 'Category', required: true, index: true }) categoryId: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Category', required: true, index: true }) categoryId: Types.ObjectId;
   @Prop({ type: Date, default: null }) deletedAt: Date | null;
   createdAt!: Date;
   updatedAt!: Date;

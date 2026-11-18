@@ -14,7 +14,7 @@ export function configureApp(app: NestExpressApplication): void {
   const clientUrl = config.getOrThrow<string>('CLIENT_BASE_URL').replace(/\/$/, '');
 
   if (config.get<boolean>('TRUST_PROXY')) app.set('trust proxy', 1);
-  app.setGlobalPrefix('api/v1', { exclude: ['health'] });
+  app.setGlobalPrefix('api/v1', { exclude: ['health', 'api/v1/health'] });
   app.useBodyParser('json', { limit: '100kb' });
   app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.enableCors({

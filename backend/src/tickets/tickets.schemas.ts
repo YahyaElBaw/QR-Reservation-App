@@ -1,18 +1,20 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 import { PaymentMethod, TicketStatus } from '../common/enums';
 
 @Schema({ timestamps: true, toJSON: { versionKey: false } })
 export class Ticket {
   @Prop({ type: String, required: true, unique: true }) ticketNumber: string;
-  @Prop({ type: Types.ObjectId, ref: 'Table', required: true }) tableId: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: 'User' }) userId?: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Table', required: true }) tableId: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' }) userId?: Types.ObjectId;
   @Prop({ type: String, enum: Object.values(TicketStatus), default: TicketStatus.OPEN }) status: TicketStatus;
   /** millimes */
   @Prop({ type: Number, default: 0 }) total: number;
   @Prop({ type: String, enum: Object.values(PaymentMethod) }) paymentMethod?: PaymentMethod;
   @Prop({ type: Date }) paidAt?: Date;
   @Prop({ type: Date }) closedAt?: Date;
+  @Prop({ type: String }) clientIp?: string;
+  @Prop({ type: String }) clientDeviceId?: string;
   createdAt!: Date;
   updatedAt!: Date;
 }
@@ -28,8 +30,8 @@ TicketSchema.index({ status: 1, paidAt: 1 });
 
 @Schema({ timestamps: true, collection: 'ticketItems', toJSON: { versionKey: false } })
 export class TicketItem {
-  @Prop({ type: Types.ObjectId, ref: 'Ticket', required: true, index: true }) ticketId: Types.ObjectId;
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true }) productId: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Ticket', required: true, index: true }) ticketId: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Product', required: true }) productId: Types.ObjectId;
   @Prop({ type: String, required: true }) productName: string;
   @Prop({ type: Number, required: true, min: 1, max: 99 }) quantity: number;
   /** snapshot, millimes */

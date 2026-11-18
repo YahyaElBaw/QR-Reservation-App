@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "QR Resto",
+    "slug": "qr-resto",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "qrresto",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qrresto.mobile"
+    },
+    "android": {
+      "package": "com.qrresto.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#1B67B5",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L'application a besoin d'accéder à l'appareil photo pour scanner le QR code de la table."
+        }
+      ]
+    ]
+  }
+}
