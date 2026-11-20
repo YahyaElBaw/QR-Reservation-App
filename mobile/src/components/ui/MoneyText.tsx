@@ -5,7 +5,7 @@ import { formatMoney } from '../../utils/formatMoney';
 
 interface MoneyTextProps {
   amount: number | undefined | null;
-  size?: 'sm' | 'md' | 'lg' | 'display';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'display';
   color?: string;
   style?: StyleProp<TextStyle>;
 }
@@ -20,6 +20,8 @@ export const MoneyText: React.FC<MoneyTextProps> = ({
 
   const getFontSize = () => {
     switch (size) {
+      case 'xs':
+        return 12.5;
       case 'sm':
         return 14;
       case 'lg':

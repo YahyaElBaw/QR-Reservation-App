@@ -30,7 +30,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   // Cloudinary transform or original
   const imageUrl = product.imageUrl
     ? product.imageUrl.includes('res.cloudinary.com')
-      ? product.imageUrl.replace('/upload/', '/upload/c_fill,ar_4:3,w_600,q_auto,f_auto/')
+      ? product.imageUrl.replace('/upload/', '/upload/c_fill,ar_4:3,w_450,q_auto,f_auto/')
       : product.imageUrl
     : null;
 
@@ -65,6 +65,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const cardRadius = isGrid ? radius.lg : radius.xl;
+
   return (
     <TouchableOpacity
       activeOpacity={onPressCard ? 0.92 : 1}
@@ -76,21 +78,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           backgroundColor: c.surface,
           borderColor: isSelected ? c.primary500 : c.border,
           borderWidth: isSelected ? 1.5 : 1,
-          borderRadius: radius.xl,
+          borderRadius: cardRadius,
           opacity: isAvailable ? 1 : 0.65,
         },
         isGrid && styles.gridCard,
       ]}
     >
-      {/* 1. Large Food Photo on Top of the Box */}
+      {/* 1. Food Photo Container */}
       <View
         style={[
           styles.photoContainer,
           {
-            height: isGrid ? 122 : 175,
+            height: isGrid ? 96 : 165,
             backgroundColor: c.surfaceAlt,
-            borderTopLeftRadius: radius.xl - 1,
-            borderTopRightRadius: radius.xl - 1,
+            borderTopLeftRadius: cardRadius - 1,
+            borderTopRightRadius: cardRadius - 1,
           },
         ]}
       >
@@ -105,21 +107,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           />
         ) : (
           <View style={styles.placeholderContainer}>
-            <Utensils size={isGrid ? 28 : 40} color={c.textFaint} strokeWidth={1.5} />
+            <Utensils size={isGrid ? 22 : 36} color={c.textFaint} strokeWidth={1.5} />
             <Text
               numberOfLines={1}
-              style={[styles.placeholderText, { color: c.textFaint, fontFamily: fonts.body }]}
+              style={[
+                styles.placeholderText,
+                { color: c.textFaint, fontFamily: fonts.body, fontSize: isGrid ? 9.5 : 11 },
+              ]}
             >
               {product.name}
             </Text>
           </View>
         )}
 
-        {/* Top Badges: Out of stock ribbon or Cart indicator */}
+        {/* Top Badges */}
         <View style={styles.photoOverlayBadges}>
           {!isAvailable && (
             <View style={[styles.outOfStockPill, { backgroundColor: c.danger500, borderRadius: radius.sm }]}>
-              <Text style={[styles.outOfStockText, { fontFamily: fonts.bodyBold }]}>
+              <Text style={[styles.outOfStockText, { fontFamily: fonts.bodyBold, fontSize: isGrid ? 9 : 10.5 }]}>
                 Épuisé
               </Text>
             </View>
@@ -133,11 +138,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {
                   backgroundColor: c.primary700,
                   borderRadius: radius.full,
+                  paddingHorizontal: isGrid ? 5 : 8,
+                  paddingVertical: isGrid ? 2 : 3,
                 },
               ]}
             >
-              <Check size={11} color="#FFFFFF" strokeWidth={3} style={{ marginRight: 2 }} />
-              <Text style={[styles.cartQtyPillText, { fontFamily: fonts.bodyBold }]}>
+              <Check size={isGrid ? 9 : 11} color="#FFFFFF" strokeWidth={3} style={{ marginRight: 2 }} />
+              <Text style={[styles.cartQtyPillText, { fontFamily: fonts.bodyBold, fontSize: isGrid ? 9.5 : 11 }]}>
                 {quantityInCart} {isGrid ? '' : 'au panier'}
               </Text>
             </View>
@@ -145,18 +152,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </View>
       </View>
 
-      {/* 2. Box Content: Dish Name, Description, and Actions */}
+      {/* 2. Compact Body: Name, Description, Price & Quick Add */}
       <View style={[styles.boxBody, isGrid && styles.gridBody]}>
-        {/* Name and Description */}
-        <View style={styles.textContainer}>
+        <View style={[styles.textContainer, isGrid && styles.gridTextContainer]}>
           <Text
-            numberOfLines={2}
+            numberOfLines={1}
             style={[
               styles.dishName,
               {
                 color: c.text,
-                fontFamily: fonts.display,
-                fontSize: isGrid ? 14 : 17,
+                fontFamily: fonts.displaySemi,
+                fontSize: isGrid ? 13 : 16.5,
               },
             ]}
           >
@@ -165,14 +171,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {product.description ? (
             <Text
-              numberOfLines={isGrid ? 1 : 2}
+              numberOfLines={1}
               style={[
                 styles.dishDescription,
                 {
                   color: c.textMuted,
                   fontFamily: fonts.body,
-                  fontSize: isGrid ? 11.5 : 13,
-                  lineHeight: isGrid ? 16 : 18.5,
+                  fontSize: isGrid ? 10.5 : 12.5,
+                  lineHeight: isGrid ? 14 : 17,
                 },
               ]}
             >
@@ -181,12 +187,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           ) : null}
         </View>
 
-        {/* Bottom Row: Price + Modern Tactile Stepper / Button */}
+        {/* Bottom Row: Price + Add / Stepper */}
         <View style={[styles.bottomRow, isGrid && styles.gridBottomRow]}>
           <View style={styles.priceContainer}>
             <MoneyText
               amount={product.price}
-              size={isGrid ? 'sm' : 'md'}
+              size={isGrid ? 'xs' : 'md'}
               color={c.primary900}
             />
           </View>
@@ -200,16 +206,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     backgroundColor: c.primary50,
                     borderColor: c.primary100,
                     borderRadius: radius.full,
+                    paddingHorizontal: isGrid ? 2 : 3,
+                    paddingVertical: isGrid ? 1 : 2,
                   },
                 ]}
               >
                 <TouchableOpacity
                   activeOpacity={0.65}
                   onPress={handleRemove}
-                  style={styles.stepperActionBtn}
+                  style={[styles.stepperActionBtn, isGrid && styles.stepperActionBtnCompact]}
                   accessibilityLabel={`Diminuer ${product.name}`}
                 >
-                  <Minus size={isGrid ? 12 : 14} color={c.primary700} strokeWidth={2.5} />
+                  <Minus size={isGrid ? 10 : 13} color={c.primary700} strokeWidth={2.5} />
                 </TouchableOpacity>
 
                 <Text
@@ -218,7 +226,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     {
                       color: c.primary900,
                       fontFamily: fonts.bodyBold,
-                      fontSize: isGrid ? 12 : 14,
+                      fontSize: isGrid ? 11 : 13.5,
+                      paddingHorizontal: isGrid ? 4 : 6,
                     },
                   ]}
                 >
@@ -228,10 +237,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <TouchableOpacity
                   activeOpacity={0.65}
                   onPress={handleAdd}
-                  style={[styles.stepperActionBtn, styles.stepperAddBtn, { backgroundColor: c.primary500 }]}
+                  style={[
+                    styles.stepperActionBtn,
+                    styles.stepperAddBtn,
+                    isGrid && styles.stepperActionBtnCompact,
+                    { backgroundColor: c.primary500 },
+                  ]}
                   accessibilityLabel={`Augmenter ${product.name}`}
                 >
-                  <Plus size={isGrid ? 12 : 14} color="#FFFFFF" strokeWidth={2.5} />
+                  <Plus size={isGrid ? 10 : 13} color="#FFFFFF" strokeWidth={2.5} />
                 </TouchableOpacity>
               </View>
             ) : (
@@ -242,6 +256,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 accessibilityLabel={`Ajouter ${product.name} au panier`}
                 style={[
                   styles.addPillBtn,
+                  isGrid && styles.addPillBtnCompact,
                   shadow[1],
                   {
                     backgroundColor: c.primary500,
@@ -249,7 +264,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   },
                 ]}
               >
-                <Plus size={isGrid ? 15 : 17} color={c.onPrimary} strokeWidth={2.5} />
+                <Plus size={isGrid ? 13 : 16} color={c.onPrimary} strokeWidth={2.5} />
                 {!isGrid && (
                   <Text style={[styles.addBtnLabel, { color: c.onPrimary, fontFamily: fonts.bodyBold }]}>
                     Ajouter
@@ -261,10 +276,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <View
               style={[
                 styles.disabledAction,
+                isGrid && styles.disabledActionCompact,
                 { backgroundColor: c.surfaceAlt, borderRadius: radius.full },
               ]}
             >
-              <Lock size={14} color={c.textFaint} />
+              <Lock size={isGrid ? 11 : 13} color={c.textFaint} />
             </View>
           ) : null}
         </View>
@@ -275,13 +291,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
 const styles = StyleSheet.create({
   boxCard: {
-    marginBottom: 16,
+    marginBottom: 14,
     overflow: 'hidden',
   },
   gridCard: {
     flex: 1,
-    marginHorizontal: 5,
-    marginBottom: 12,
+    marginHorizontal: 4,
+    marginBottom: 10,
   },
   photoContainer: {
     width: '100%',
@@ -300,69 +316,69 @@ const styles = StyleSheet.create({
   placeholderContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 8,
   },
   placeholderText: {
-    fontSize: 11,
-    marginTop: 4,
+    marginTop: 2,
     textAlign: 'center',
   },
   photoOverlayBadges: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    right: 8,
+    top: 6,
+    left: 6,
+    right: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   outOfStockPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   outOfStockText: {
     color: '#FFFFFF',
-    fontSize: 10.5,
     textTransform: 'uppercase',
   },
   cartQtyPill: {
     marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
   },
   cartQtyPillText: {
     color: '#FFFFFF',
-    fontSize: 11,
   },
   boxBody: {
-    padding: 14,
+    padding: 12,
   },
   gridBody: {
-    padding: 10,
-    paddingTop: 8,
+    padding: 8,
+    paddingTop: 6,
+    paddingBottom: 7,
   },
   textContainer: {
-    marginBottom: 8,
-    minHeight: 46,
+    marginBottom: 6,
+    minHeight: 40,
     justifyContent: 'flex-start',
   },
+  gridTextContainer: {
+    marginBottom: 4,
+    minHeight: 30,
+  },
   dishName: {
-    marginBottom: 2,
+    marginBottom: 1,
     letterSpacing: -0.2,
   },
   dishDescription: {
-    marginTop: 1,
+    marginTop: 0,
   },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 2,
   },
   gridBottomRow: {
-    marginTop: 2,
+    marginTop: 1,
   },
   priceContainer: {
     flexShrink: 1,
@@ -371,41 +387,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    paddingHorizontal: 3,
-    paddingVertical: 2,
   },
   stepperActionBtn: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 11,
+  },
+  stepperActionBtnCompact: {
+    width: 19,
+    height: 19,
+    borderRadius: 9.5,
   },
   stepperAddBtn: {
-    marginLeft: 2,
+    marginLeft: 1,
   },
   stepperNumber: {
-    paddingHorizontal: 6,
-    minWidth: 18,
+    minWidth: 16,
     textAlign: 'center',
   },
   addPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    minWidth: 32,
-    minHeight: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minWidth: 28,
+    minHeight: 28,
+  },
+  addPillBtnCompact: {
+    width: 26,
+    height: 26,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderRadius: 13,
   },
   addBtnLabel: {
-    fontSize: 13,
+    fontSize: 12.5,
     marginLeft: 4,
   },
   disabledAction: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  disabledActionCompact: {
+    width: 24,
+    height: 24,
   },
 });
