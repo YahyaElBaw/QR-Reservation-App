@@ -46,10 +46,11 @@ export default function TableMenuScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartModalOpen, setCartModalOpen] = useState(false);
   const [serverModalOpen, setServerModalOpen] = useState(false);
-  const [customServerIp, setCustomServerIp] = useState('172.16.27.175');
+  const [customServerIp, setCustomServerIp] = useState('192.168.1.128');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
 
-  const { addItem, updateQuantity, getItemCount, getTotalAmount, getItems } = useCartStore();
+  const carts = useCartStore((s) => s.carts);
+  const { addItem, updateQuantity } = useCartStore();
 
   useEffect(() => {
     getOrCreateDeviceId().then(setDeviceId).catch(() => {});
@@ -114,12 +115,20 @@ export default function TableMenuScreen() {
     return res;
   }, [products, selectedCategory, searchQuery]);
 
-  const cartCount = getItemCount(qrToken as string);
-  const cartTotal = getTotalAmount(qrToken as string);
-  const cartItems = getItems(qrToken as string);
+  const currentCartItems = useMemo(() => {
+    return qrToken && carts[qrToken as string] ? carts[qrToken as string] : [];
+  }, [carts, qrToken]);
+
+  const cartCount = useMemo(() => {
+    return currentCartItems.reduce((sum, item) => sum + item.quantity, 0);
+  }, [currentCartItems]);
+
+  const cartTotal = useMemo(() => {
+    return currentCartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  }, [currentCartItems]);
 
   const getProductCartQty = (productId: string) => {
-    const item = cartItems.find((i) => i.product._id === productId);
+    const item = currentCartItems.find((i) => i.product._id === productId);
     return item ? item.quantity : 0;
   };
 
@@ -313,6 +322,7 @@ export default function TableMenuScreen() {
         data={filteredProducts}
         keyExtractor={(item) => item._id}
         numColumns={2}
+        keyboardShouldPersistTaps="handled"
         columnWrapperStyle={styles.gridColumnWrapper}
         contentContainerStyle={[
           styles.listContent,

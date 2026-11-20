@@ -27,7 +27,7 @@ const getInitialBaseUrl = (): string => {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-  return 'http://172.16.27.175:3000/api/v1';
+  return 'http://192.168.1.128:3000/api/v1';
 };
 
 export let API_BASE_URL = getInitialBaseUrl();

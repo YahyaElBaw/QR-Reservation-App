@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Plus, Minus, Utensils, Lock, Check } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/useTheme';
@@ -26,7 +26,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   disabled = false,
   cardWidth,
 }) => {
-  const { c, radius, fonts, shadow } = useTheme();
+  const { c, fonts, shadow } = useTheme();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Cloudinary transform or original
   const imageUrl = product.imageUrl
@@ -38,21 +39,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const isAvailable = product.available;
   const isSelected = quantityInCart > 0;
 
-  const handleAdd = (e?: any) => {
-    e?.stopPropagation?.();
+  const handleAdd = () => {
     if (disabled || !isAvailable) return;
+
+    // Subtle tactile bounce on press
+    try {
+      Animated.sequence([
+        Animated.timing(scaleAnim, { toValue: 0.85, duration: 60, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 4, tension: 40, useNativeDriver: true }),
+      ]).start();
+    } catch {}
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch {}
+
     onAddToCart(product);
   };
 
-  const handleRemove = (e?: any) => {
-    e?.stopPropagation?.();
+  const handleRemove = () => {
     if (disabled || !onRemoveFromCart) return;
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } catch {}
+
     onRemoveFromCart(product);
   };
 
@@ -68,9 +79,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const cardRadius = 16;
 
   return (
-    <TouchableOpacity
-      activeOpacity={onPressCard ? 0.88 : 1}
-      onPress={handleCardPress}
+    <View
       style={[
         styles.card,
         shadow[1],
@@ -84,68 +93,75 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         cardWidth ? { width: cardWidth, maxWidth: cardWidth } : styles.defaultWidth,
       ]}
     >
-      {/* 1. Food Photo on top */}
-      <View
-        style={[
-          styles.photoWrapper,
-          {
-            backgroundColor: c.surfaceAlt,
-            borderTopLeftRadius: cardRadius - 1,
-            borderTopRightRadius: cardRadius - 1,
-          },
-        ]}
+      {/* 1. Upper area: Photo + Title + Description - Clickable to open Detail Modal */}
+      <TouchableOpacity
+        activeOpacity={onPressCard ? 0.85 : 1}
+        onPress={handleCardPress}
+        disabled={!onPressCard}
+        accessibilityRole="button"
+        accessibilityLabel={`${product.name}, voir les détails`}
+        style={styles.cardTopTouchable}
       >
-        {imageUrl ? (
-          <Image
-            source={{ uri: imageUrl }}
-            style={[styles.photo, !isAvailable && styles.grayscale]}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <Utensils size={24} color={c.textFaint} strokeWidth={1.5} />
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.placeholderText,
-                { color: c.textFaint, fontFamily: fonts.body },
-              ]}
-            >
-              {product.name}
-            </Text>
+        {/* Food Photo */}
+        <View
+          style={[
+            styles.photoWrapper,
+            {
+              backgroundColor: c.surfaceAlt,
+              borderTopLeftRadius: cardRadius - 1,
+              borderTopRightRadius: cardRadius - 1,
+            },
+          ]}
+        >
+          {imageUrl ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={[styles.photo, !isAvailable && styles.grayscale]}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.placeholderContainer}>
+              <Utensils size={24} color={c.textFaint} strokeWidth={1.5} />
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.placeholderText,
+                  { color: c.textFaint, fontFamily: fonts.body },
+                ]}
+              >
+                {product.name}
+              </Text>
+            </View>
+          )}
+
+          {/* Top Badges */}
+          <View style={styles.badgeOverlay}>
+            {!isAvailable && (
+              <View style={[styles.badgePill, { backgroundColor: c.danger500 }]}>
+                <Text style={[styles.badgeText, { fontFamily: fonts.bodyBold }]}>
+                  Épuisé
+                </Text>
+              </View>
+            )}
+
+            {isSelected && (
+              <View
+                style={[
+                  styles.badgePill,
+                  styles.cartPill,
+                  shadow[1],
+                  { backgroundColor: c.primary700 },
+                ]}
+              >
+                <Check size={10} color="#FFFFFF" strokeWidth={3} style={{ marginRight: 2 }} />
+                <Text style={[styles.badgeText, { fontFamily: fonts.bodyBold }]}>
+                  {quantityInCart}
+                </Text>
+              </View>
+            )}
           </View>
-        )}
-
-        {/* Top Badges */}
-        <View style={styles.badgeOverlay}>
-          {!isAvailable && (
-            <View style={[styles.badgePill, { backgroundColor: c.danger500 }]}>
-              <Text style={[styles.badgeText, { fontFamily: fonts.bodyBold }]}>
-                Épuisé
-              </Text>
-            </View>
-          )}
-
-          {isSelected && (
-            <View
-              style={[
-                styles.badgePill,
-                styles.cartPill,
-                shadow[1],
-                { backgroundColor: c.primary700 },
-              ]}
-            >
-              <Check size={10} color="#FFFFFF" strokeWidth={3} style={{ marginRight: 2 }} />
-              <Text style={[styles.badgeText, { fontFamily: fonts.bodyBold }]}>
-                {quantityInCart}
-              </Text>
-            </View>
-          )}
         </View>
-      </View>
 
-      {/* 2. Content: Dish Name, Description, and Bottom Actions */}
-      <View style={styles.cardBody}>
         {/* Title & Description */}
         <View style={styles.infoWrapper}>
           <Text
@@ -176,62 +192,69 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Text>
           ) : null}
         </View>
+      </TouchableOpacity>
 
-        {/* Price & Action Button */}
-        <View style={styles.actionRow}>
-          <View style={styles.priceContainer}>
-            <MoneyText
-              amount={product.price}
-              size="xs"
-              color={c.primary900}
-            />
-          </View>
+      {/* 2. Bottom Row: Price & Action Buttons (Isolated from card click - No event conflicts) */}
+      <View style={styles.actionRow}>
+        <View style={styles.priceContainer}>
+          <MoneyText
+            amount={product.price}
+            size="xs"
+            color={c.primary900}
+          />
+        </View>
 
-          {isAvailable && !disabled ? (
-            isSelected && onRemoveFromCart ? (
-              <View
+        {isAvailable && !disabled ? (
+          isSelected && onRemoveFromCart ? (
+            <View
+              style={[
+                styles.stepperCapsule,
+                {
+                  backgroundColor: c.primary50,
+                  borderColor: c.primary100,
+                },
+              ]}
+            >
+              <TouchableOpacity
+                activeOpacity={0.65}
+                onPress={handleRemove}
+                hitSlop={{ top: 12, bottom: 12, left: 10, right: 8 }}
+                style={styles.stepperBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`Diminuer ${product.name}`}
+              >
+                <Minus size={12} color={c.primary700} strokeWidth={2.6} />
+              </TouchableOpacity>
+
+              <Text
                 style={[
-                  styles.stepperCapsule,
+                  styles.stepperValue,
                   {
-                    backgroundColor: c.primary50,
-                    borderColor: c.primary100,
+                    color: c.primary900,
+                    fontFamily: fonts.bodyBold,
                   },
                 ]}
               >
-                <TouchableOpacity
-                  activeOpacity={0.65}
-                  onPress={handleRemove}
-                  style={styles.stepperBtn}
-                  accessibilityLabel={`Diminuer ${product.name}`}
-                >
-                  <Minus size={11} color={c.primary700} strokeWidth={2.5} />
-                </TouchableOpacity>
+                {quantityInCart}
+              </Text>
 
-                <Text
-                  style={[
-                    styles.stepperValue,
-                    {
-                      color: c.primary900,
-                      fontFamily: fonts.bodyBold,
-                    },
-                  ]}
-                >
-                  {quantityInCart}
-                </Text>
-
-                <TouchableOpacity
-                  activeOpacity={0.65}
-                  onPress={handleAdd}
-                  style={[styles.stepperBtn, styles.stepperAddBtn, { backgroundColor: '#F97316' }]}
-                  accessibilityLabel={`Augmenter ${product.name}`}
-                >
-                  <Plus size={11} color="#FFFFFF" strokeWidth={2.5} />
-                </TouchableOpacity>
-              </View>
-            ) : (
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={0.65}
                 onPress={handleAdd}
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 10 }}
+                style={[styles.stepperBtn, styles.stepperAddBtn, { backgroundColor: '#F97316' }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Augmenter ${product.name}`}
+              >
+                <Plus size={12} color="#FFFFFF" strokeWidth={2.6} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={handleAdd}
+                hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
                 accessibilityRole="button"
                 accessibilityLabel={`Ajouter ${product.name} au panier`}
                 style={[
@@ -242,22 +265,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   },
                 ]}
               >
-                <Plus size={15} color="#FFFFFF" strokeWidth={2.8} />
+                <Plus size={16} color="#FFFFFF" strokeWidth={3} />
               </TouchableOpacity>
-            )
-          ) : disabled ? (
-            <View
-              style={[
-                styles.lockBtn,
-                { backgroundColor: c.surfaceAlt },
-              ]}
-            >
-              <Lock size={12} color={c.textFaint} />
-            </View>
-          ) : null}
-        </View>
+            </Animated.View>
+          )
+        ) : disabled ? (
+          <View
+            style={[
+              styles.lockBtn,
+              { backgroundColor: c.surfaceAlt },
+            ]}
+          >
+            <Lock size={12} color={c.textFaint} />
+          </View>
+        ) : null}
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -265,10 +288,14 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 10,
     overflow: 'hidden',
+    justifyContent: 'space-between',
   },
   defaultWidth: {
     width: '48.2%',
     maxWidth: '48.2%',
+  },
+  cardTopTouchable: {
+    width: '100%',
   },
   photoWrapper: {
     width: '100%',
@@ -319,14 +346,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 9.5,
   },
-  cardBody: {
+  infoWrapper: {
     paddingHorizontal: 8,
     paddingTop: 6,
-    paddingBottom: 8,
-  },
-  infoWrapper: {
-    minHeight: 30,
-    marginBottom: 4,
+    paddingBottom: 2,
+    minHeight: 32,
     justifyContent: 'flex-start',
   },
   dishTitle: {
@@ -342,15 +366,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 2,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    paddingTop: 4,
   },
   priceContainer: {
     flexShrink: 1,
   },
   roundAddBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -363,19 +389,19 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   stepperBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepperAddBtn: {
-    marginLeft: 1,
+    marginLeft: 2,
   },
   stepperValue: {
-    fontSize: 11,
+    fontSize: 11.5,
     paddingHorizontal: 4,
-    minWidth: 14,
+    minWidth: 16,
     textAlign: 'center',
   },
   lockBtn: {

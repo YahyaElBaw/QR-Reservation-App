@@ -31,12 +31,13 @@ export const CartModal: React.FC<CartModalProps> = ({
   onOrderPlaced,
 }) => {
   const { c, fonts } = useTheme();
-  const { getItems, getTotalAmount, updateQuantity, removeItem, clearCart } = useCartStore();
+  const carts = useCartStore((s) => s.carts);
+  const { updateQuantity, removeItem, clearCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const items = getItems(qrToken);
-  const total = getTotalAmount(qrToken);
+  const items = React.useMemo(() => (qrToken && carts[qrToken] ? carts[qrToken] : []), [carts, qrToken]);
+  const total = React.useMemo(() => items.reduce((sum, item) => sum + item.product.price * item.quantity, 0), [items]);
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;

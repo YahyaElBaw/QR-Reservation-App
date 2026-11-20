@@ -262,6 +262,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <TouchableOpacity
                 onPress={handleDecrement}
                 disabled={quantity <= 1}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[styles.stepperBtn, quantity <= 1 && styles.stepperBtnDisabled]}
                 accessibilityLabel="Diminuer la quantité"
               >
@@ -274,6 +275,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
               <TouchableOpacity
                 onPress={handleIncrement}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={styles.stepperBtn}
                 accessibilityLabel="Augmenter la quantité"
               >
