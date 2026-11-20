@@ -10,10 +10,11 @@ import {
   Modal,
   TextInput,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Receipt, Search, AlertCircle, Wifi, X, Lock, LayoutGrid, Square, Sparkles } from 'lucide-react-native';
+import { Receipt, Search, AlertCircle, Wifi, X, Lock, Sparkles } from 'lucide-react-native';
 import { useTheme } from '../../../src/theme/useTheme';
 import { api, API_BASE_URL, setApiBaseUrl } from '../../../src/services/api';
 import { setSocketBaseUrl, useLiveUpdates } from '../../../src/services/live';
@@ -35,10 +36,12 @@ export default function TableMenuScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const { c, radius, fonts, shadow } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Exactly 2 cards per row calculated dynamically
+  const cardWidth = Math.floor((screenWidth - 24 - 10) / 2);
 
   const [deviceId, setDeviceId] = useState<string>('');
-  // 2-column grid is default as requested by user
-  const [viewMode, setViewMode] = useState<'box' | 'grid'>('grid');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cartModalOpen, setCartModalOpen] = useState(false);
@@ -297,49 +300,22 @@ export default function TableMenuScreen() {
         onSelect={setSelectedCategory}
       />
 
-      {/* Subheader Toolbar: Dish Count & Layout Switcher */}
+      {/* Subheader Toolbar: Dish Count */}
       <View style={styles.toolbarRow}>
         <Text style={[styles.toolbarCount, { color: c.textMuted, fontFamily: fonts.bodyMedium }]}>
           {filteredProducts.length} {filteredProducts.length === 1 ? 'produit' : 'produits'}
         </Text>
-
-        <View style={[styles.layoutToggle, { backgroundColor: c.surfaceAlt, borderRadius: radius.full }]}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setViewMode('grid')}
-            style={[
-              styles.toggleBtn,
-              viewMode === 'grid' && [styles.toggleBtnActive, shadow[1], { backgroundColor: c.surface, borderRadius: radius.full }],
-            ]}
-            accessibilityLabel="Affichage grille deux colonnes"
-          >
-            <LayoutGrid size={15} color={viewMode === 'grid' ? c.primary700 : c.textFaint} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => setViewMode('box')}
-            style={[
-              styles.toggleBtn,
-              viewMode === 'box' && [styles.toggleBtnActive, shadow[1], { backgroundColor: c.surface, borderRadius: radius.full }],
-            ]}
-            accessibilityLabel="Affichage grandes cartes"
-          >
-            <Square size={15} color={viewMode === 'box' ? c.primary700 : c.textFaint} />
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Product List: 2 boxes per line by default */}
+      {/* Product List: STRICTLY 2 cards per row */}
       <FlatList
-        key={viewMode}
+        key="menu-grid-2col"
         data={filteredProducts}
         keyExtractor={(item) => item._id}
-        numColumns={viewMode === 'grid' ? 2 : 1}
-        columnWrapperStyle={viewMode === 'grid' ? styles.gridColumnWrapper : undefined}
+        numColumns={2}
+        columnWrapperStyle={styles.gridColumnWrapper}
         contentContainerStyle={[
           styles.listContent,
-          viewMode === 'box' && styles.boxListContent,
           { paddingBottom: cartCount > 0 && !lockedToOtherDevice ? 110 : 30 },
         ]}
         showsVerticalScrollIndicator={false}
@@ -349,7 +325,7 @@ export default function TableMenuScreen() {
         renderItem={({ item }) => (
           <ProductCard
             product={item}
-            variant={viewMode === 'grid' ? 'gridBox' : 'box'}
+            cardWidth={cardWidth}
             onPressCard={(p) => setSelectedProductForDetail(p)}
             onAddToCart={(prod) => addItem(qrToken as string, prod)}
             onRemoveFromCart={(prod) => updateQuantity(qrToken as string, prod._id, -1)}
@@ -522,14 +498,12 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   gridColumnWrapper: {
-    paddingHorizontal: 11,
+    paddingHorizontal: 12,
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   listContent: {
     paddingTop: 4,
-  },
-  boxListContent: {
-    paddingHorizontal: 16,
   },
   modalBackdrop: {
     flex: 1,
