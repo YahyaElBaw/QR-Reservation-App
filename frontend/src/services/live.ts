@@ -42,18 +42,10 @@ export function useLive() {
       window.addEventListener('demo-updated', refresh)
       return
     }
-    const defaultHost =
-      typeof window !== 'undefined' &&
-      window.location.hostname &&
-      window.location.hostname !== 'localhost' &&
-      window.location.hostname !== '127.0.0.1'
-        ? `http://${window.location.hostname}:3000`
-        : 'http://localhost:3000'
     const origin =
-      import.meta.env.VITE_SOCKET_URL ||
-      (import.meta.env.VITE_API_URL
-        ? new URL(import.meta.env.VITE_API_URL).origin
-        : defaultHost)
+      typeof window !== 'undefined' && window.location.hostname
+        ? `http://${window.location.hostname}:3000`
+        : import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'
     socket = io(`${origin.replace(/\/$/, '')}/live`, { auth: { token: getToken() } })
     socket.on('connect', () => {
       liveConnected.value = true

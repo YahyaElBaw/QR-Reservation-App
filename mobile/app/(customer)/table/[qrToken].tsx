@@ -43,7 +43,7 @@ export default function TableMenuScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartModalOpen, setCartModalOpen] = useState(false);
   const [serverModalOpen, setServerModalOpen] = useState(false);
-  const [customServerIp, setCustomServerIp] = useState('192.168.1.22');
+  const [customServerIp, setCustomServerIp] = useState('172.16.27.175');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
 
   const { addItem, updateQuantity, getItemCount, getTotalAmount, getItems } = useCartStore();

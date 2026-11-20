@@ -17,19 +17,17 @@ import type {
 const API_STORAGE_KEY = 'qrresto_api_base_url_v1';
 
 const getInitialBaseUrl = (): string => {
-  if (process.env.EXPO_PUBLIC_API_URL && !process.env.EXPO_PUBLIC_API_URL.includes('localhost')) {
-    return process.env.EXPO_PUBLIC_API_URL;
-  }
   if (
     Platform.OS === 'web' &&
     typeof window !== 'undefined' &&
-    window.location.hostname &&
-    window.location.hostname !== 'localhost' &&
-    window.location.hostname !== '127.0.0.1'
+    window.location.hostname
   ) {
     return `http://${window.location.hostname}:3000/api/v1`;
   }
-  return process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.22:3000/api/v1';
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+  return 'http://172.16.27.175:3000/api/v1';
 };
 
 export let API_BASE_URL = getInitialBaseUrl();
