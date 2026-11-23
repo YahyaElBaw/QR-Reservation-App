@@ -1,0 +1,283 @@
+=====================================================================
+ QR RESTAURANT - SHARED THEME  (theme.txt)  v1.0
+ Single source of truth for Vue (web), Expo (mobile) and any new UI.
+ RULE: never hard-code a color, font, radius or spacing. Use tokens.
+=====================================================================
+
+0. DESIGN IDEA
+---------------------------------------------------------------------
+"Medina Blue" - inspired by Tunisian whitewashed walls and blue doors
+(Sidi Bou Said). Cool white surfaces, one confident blue, saffron used
+only to draw the eye to the single most important action/number.
+Calm, fast, readable in a busy room, one-handed on a phone.
+
+Principles
+  1. One primary action per screen (blue). Saffron = highlight only.
+  2. Big touch targets (min 48px), thumb-reachable actions at the bottom.
+  3. Status is always color + icon + text (never color alone).
+  4. Prices are the most legible thing on a product card.
+  5. Sentence case everywhere. No ALL-CAPS labels. No decorative gradients.
+  6. Tinted blue shadows, not grey. Few shadows: only cards that float.
+
+1. COLOR TOKENS (light)
+---------------------------------------------------------------------
+Brand
+  primary-900   #0B2F57
+  primary-700   #124A85
+  primary-600   #17589C      <- hover / pressed
+  primary-500   #1B67B5      <- MAIN brand blue ("Medina Blue")
+  primary-100   #DCEAF8
+  primary-50    #EEF5FC
+  accent-500    #F2A81D      <- Saffron (highlight, total, badges "new")
+  accent-100    #FDF0D2
+  on-primary    #FFFFFF
+  on-accent     #2A1B00
+
+Neutrals ("Whitewash" & "Ink")
+  bg            #F6F9FC      page background
+  surface       #FFFFFF      cards, sheets, inputs
+  surface-alt   #ECF1F6      table rows, disabled, chips
+  border        #D5DEE8
+  border-strong #B4C2D1
+  text          #0F2133      main text
+  text-muted    #566779      secondary text
+  text-faint    #8797A8      placeholders, hints
+  overlay       rgba(11,47,87,0.55)
+
+Semantic
+  success-500   #1E9E6A  (mint)     success-100 #D9F2E6
+  warning-500   #E08A00             warning-100 #FCEBCB
+  danger-500    #C8372D  (harissa)  danger-100  #F9DEDB
+  info-500      #2F7FD1             info-100    #DCEAF8
+
+Business status colors (use EXACTLY these everywhere)
+  Table AVAILABLE   -> success   (icon: circle-check)
+  Table RESERVED    -> warning   (icon: users)
+  Ticket OPEN       -> info      (icon: receipt)
+  Ticket PAID       -> accent    (icon: banknote)   bg accent-100 / text on-accent
+  Ticket CLOSED     -> neutral   (icon: lock)       bg surface-alt / text-muted
+  Product unavailable -> danger-100 + "Unavailable" label, image desaturated
+
+2. COLOR TOKENS (dark)  - optional but tokens must exist from day one
+---------------------------------------------------------------------
+  bg            #0A1622
+  surface       #11222F
+  surface-alt   #182D3D
+  border        #25394B
+  text          #EAF1F8
+  text-muted    #9FB1C3
+  primary-500   #4C9AE8   (lifted for contrast)
+  accent-500    #F5B94A
+  success-500   #3CC48C   warning-500 #F0A93A   danger-500 #EF6B61
+  Contrast rule: text on any background >= 4.5:1, large text >= 3:1.
+
+3. TYPOGRAPHY
+---------------------------------------------------------------------
+  Display / headings : Bricolage Grotesque  (600, 700)
+  Body / UI          : DM Sans              (400, 500, 700)
+  Arabic (RTL)       : Cairo                (400, 600, 700)
+  Numbers (prices)   : DM Sans 700 with tabular-nums
+  Fallbacks web      : system-ui, -apple-system, "Segoe UI", sans-serif
+  Expo packages      : @expo-google-fonts/bricolage-grotesque
+                       @expo-google-fonts/dm-sans
+                       @expo-google-fonts/cairo
+
+Scale (px, mobile / desktop)      weight  line-height
+  display   32 / 44               700     1.1
+  h1        26 / 32               700     1.2
+  h2        21 / 24               600     1.25
+  h3        18 / 20               600     1.3
+  body-lg   17 / 18               400     1.5
+  body      15 / 16               400     1.5
+  body-sm   13 / 14               400     1.45
+  caption   12 / 12               500     1.4
+  price     18 / 20               700     1.1  (tabular-nums)
+  Max line length 70 characters. Never go below 12px.
+
+4. SPACING, RADIUS, ELEVATION, SIZES
+---------------------------------------------------------------------
+  Spacing (4pt grid): 4, 8, 12, 16, 20, 24, 32, 40, 56, 72
+    space-1=4 space-2=8 space-3=12 space-4=16 space-5=20
+    space-6=24 space-8=32 space-10=40 space-14=56 space-18=72
+  Screen padding: 16 (mobile) / 24 (tablet) / 32 (desktop)
+
+  Radius (different on purpose - hierarchy)
+    radius-sm   8    chips inside cards, small tags
+    radius-md   12   buttons, inputs
+    radius-lg   20   cards, product cards
+    radius-xl   28   bottom sheets, modals (top corners)
+    radius-full 999  badges, avatars, quantity stepper
+
+  Elevation (blue-tinted)
+    shadow-1  0 1px 2px rgba(11,47,87,0.08)
+    shadow-2  0 6px 18px rgba(11,47,87,0.12)   floating cart bar, dropdowns
+    shadow-3  0 16px 40px rgba(11,47,87,0.18)  modals
+    Cards in lists: border 1px border + NO shadow.
+
+  Sizes
+    touch target min   48
+    button height      48 (md)  /  56 (lg, main CTA)  /  36 (sm)
+    input height       48
+    icon sizes         20 (inline) / 24 (default) / 32 (feature)
+    product image      1:1 ratio on cards, radius-lg
+    bottom nav height  64 (+ safe area)
+    max content width (web back-office) 1280 ; client web 560 centered
+
+5. COMPONENT SPECS (build the same in Vue and Expo)
+---------------------------------------------------------------------
+Button
+  primary   : bg primary-500, text on-primary, pressed primary-600
+  secondary : bg primary-50, text primary-700, border primary-100
+  ghost     : transparent, text primary-600
+  danger    : bg danger-500, text white
+  highlight : bg accent-500, text on-accent (ONLY for "Place order"/"Pay")
+  disabled  : bg surface-alt, text text-faint
+  radius-md, label body 700, loading state = spinner replaces label, keep width
+
+Input / Select / Search
+  bg surface, 1px border, radius-md, height 48, focus ring 2px primary-500
+  error: border danger-500 + message below in body-sm danger-500
+  label above (body-sm 500, text-muted), never placeholder-only
+
+Product card (client)
+  image 1:1 radius-lg, name h3, description body-sm 2 lines max (text-muted),
+  price bottom-left (price style), "+" round button bottom-right (primary).
+  Unavailable: grayscale image, no "+" button, tag "Unavailable".
+
+Quantity stepper : pill (radius-full), "-" qty "+" , 40x40 buttons, qty tabular.
+Category chips   : horizontal scroll, pill, active = primary-500 bg / white text,
+                   inactive = surface-alt bg / text.
+Floating cart bar: bottom, radius-lg, bg primary-700, text white,
+                   left: "3 items", right: total in accent-500, shadow-2.
+Status badge     : pill, icon 16 + label, colors from section 1.
+Ticket line row  : name, qty x unit price, subtotal right aligned (tabular).
+Total block      : label body, value display-size in accent on dark panel
+                   OR primary-900 text on accent-100 panel.
+Table tile (back-office): 120x96 min, big table number (h1), status badge,
+                   open ticket total if any. Tap -> ticket detail.
+Data table (web) : sticky header surface-alt, row hover primary-50, 56px rows.
+Toast            : bottom (mobile) / top-right (web), 4s, icon + one sentence.
+Empty state      : icon 32, one sentence of what is missing, one button to fix it.
+Bottom sheet / modal : radius-xl top, drag handle 36x4 border-strong, overlay token.
+
+6. ICONS & IMAGES
+---------------------------------------------------------------------
+  Icons : Lucide only (lucide-vue-next / lucide-react-native), stroke 1.75,
+          color inherits from text token.
+  Product images : Cloudinary, always request transformed URL:
+          /c_fill,ar_1:1,w_600,q_auto,f_auto/   (thumb: w_200)
+  Placeholder when no image: surface-alt + utensils icon text-faint.
+
+7. MOTION
+---------------------------------------------------------------------
+  Only motion that answers an action:
+   - add to cart: item count bumps (scale 1 -> 1.15 -> 1, 160ms)
+   - sheet open/close: 220ms ease-out
+   - order confirmed: check icon draws once (400ms)
+  No page-load fade-ins, no hover-lift on every card.
+  Honor reduced-motion (web: prefers-reduced-motion, RN: AccessibilityInfo).
+  durations: fast 120ms / base 200ms / slow 320ms  easing: cubic-bezier(.2,.8,.2,1)
+
+8. LANGUAGE, MONEY, DATES
+---------------------------------------------------------------------
+  UI languages: French (default), Arabic (RTL ready), English.
+  Use logical properties (margin-inline-start, ps/pe) - never left/right.
+  Currency: TND, 3 decimals -> "24,500 TND" (fr) / "24.500 TND" (en)
+            Intl.NumberFormat(locale, {style:'currency', currency:'TND'})
+  Dates: DD/MM/YYYY HH:mm, 24h, timezone Africa/Tunis.
+  Voice: short, active, user words. Buttons say what happens:
+    "Add to cart", "Place order", "Add to my order", "Mark as paid",
+    "Close ticket". Errors say what went wrong + how to fix, no apologies.
+    The same action keeps the same name in button, toast and history.
+
+9. ACCESSIBILITY FLOOR
+---------------------------------------------------------------------
+  Contrast AA, visible focus ring (web), accessibilityLabel on every icon
+  button (mobile), alt on images, 48px targets, text scales to 200%,
+  no information by color alone.
+
+10. IMPLEMENTATION FILES (create exactly these)
+---------------------------------------------------------------------
+--- Vue (frontend/src/styles/tokens.css) ---
+:root {
+  --c-primary-900:#0B2F57; --c-primary-700:#124A85; --c-primary-600:#17589C;
+  --c-primary-500:#1B67B5; --c-primary-100:#DCEAF8; --c-primary-50:#EEF5FC;
+  --c-accent-500:#F2A81D;  --c-accent-100:#FDF0D2;
+  --c-on-primary:#FFFFFF;  --c-on-accent:#2A1B00;
+  --c-bg:#F6F9FC; --c-surface:#FFFFFF; --c-surface-alt:#ECF1F6;
+  --c-border:#D5DEE8; --c-border-strong:#B4C2D1;
+  --c-text:#0F2133; --c-text-muted:#566779; --c-text-faint:#8797A8;
+  --c-overlay:rgba(11,47,87,.55);
+  --c-success-500:#1E9E6A; --c-success-100:#D9F2E6;
+  --c-warning-500:#E08A00; --c-warning-100:#FCEBCB;
+  --c-danger-500:#C8372D;  --c-danger-100:#F9DEDB;
+  --c-info-500:#2F7FD1;    --c-info-100:#DCEAF8;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-ar:'Cairo',system-ui,sans-serif;
+  --r-sm:8px; --r-md:12px; --r-lg:20px; --r-xl:28px; --r-full:999px;
+  --shadow-1:0 1px 2px rgba(11,47,87,.08);
+  --shadow-2:0 6px 18px rgba(11,47,87,.12);
+  --shadow-3:0 16px 40px rgba(11,47,87,.18);
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px;
+  --space-6:24px; --space-8:32px; --space-10:40px; --space-14:56px; --space-18:72px;
+  --dur-fast:120ms; --dur-base:200ms; --dur-slow:320ms;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+[data-theme="dark"] {
+  --c-bg:#0A1622; --c-surface:#11222F; --c-surface-alt:#182D3D;
+  --c-border:#25394B; --c-text:#EAF1F8; --c-text-muted:#9FB1C3;
+  --c-primary-500:#4C9AE8; --c-accent-500:#F5B94A;
+  --c-success-500:#3CC48C; --c-warning-500:#F0A93A; --c-danger-500:#EF6B61;
+}
+(Tailwind users: map these variables in tailwind.config theme.extend.colors.)
+
+--- Expo (mobile/src/theme/tokens.ts) ---
+export const colors = {
+  primary900:'#0B2F57', primary700:'#124A85', primary600:'#17589C',
+  primary500:'#1B67B5', primary100:'#DCEAF8', primary50:'#EEF5FC',
+  accent500:'#F2A81D', accent100:'#FDF0D2',
+  onPrimary:'#FFFFFF', onAccent:'#2A1B00',
+  bg:'#F6F9FC', surface:'#FFFFFF', surfaceAlt:'#ECF1F6',
+  border:'#D5DEE8', borderStrong:'#B4C2D1',
+  text:'#0F2133', textMuted:'#566779', textFaint:'#8797A8',
+  overlay:'rgba(11,47,87,0.55)',
+  success500:'#1E9E6A', success100:'#D9F2E6',
+  warning500:'#E08A00', warning100:'#FCEBCB',
+  danger500:'#C8372D',  danger100:'#F9DEDB',
+  info500:'#2F7FD1',    info100:'#DCEAF8',
+} as const;
+export const darkColors = { ...colors,
+  bg:'#0A1622', surface:'#11222F', surfaceAlt:'#182D3D', border:'#25394B',
+  text:'#EAF1F8', textMuted:'#9FB1C3', primary500:'#4C9AE8',
+  accent500:'#F5B94A', success500:'#3CC48C', warning500:'#F0A93A', danger500:'#EF6B61',
+} as const;
+export const space = {1:4,2:8,3:12,4:16,5:20,6:24,8:32,10:40,14:56,18:72} as const;
+export const radius = { sm:8, md:12, lg:20, xl:28, full:999 } as const;
+export const fonts = {
+  display:'BricolageGrotesque_700Bold', displaySemi:'BricolageGrotesque_600SemiBold',
+  body:'DMSans_400Regular', bodyMedium:'DMSans_500Medium', bodyBold:'DMSans_700Bold',
+  ar:'Cairo_400Regular', arBold:'Cairo_700Bold',
+} as const;
+export const shadow = {
+  1:{shadowColor:'#0B2F57',shadowOpacity:.08,shadowRadius:2,shadowOffset:{width:0,height:1},elevation:1},
+  2:{shadowColor:'#0B2F57',shadowOpacity:.12,shadowRadius:18,shadowOffset:{width:0,height:6},elevation:6},
+  3:{shadowColor:'#0B2F57',shadowOpacity:.18,shadowRadius:40,shadowOffset:{width:0,height:16},elevation:12},
+} as const;
+
+--- Shared status map (copy in both apps: statusMap.ts) ---
+export const ticketStatusUI = {
+  OPEN:  { label:'Open',   tone:'info',    icon:'receipt' },
+  PAID:  { label:'Paid',   tone:'accent',  icon:'banknote' },
+  CLOSED:{ label:'Closed', tone:'neutral', icon:'lock' },
+};
+export const tableStatusUI = {
+  AVAILABLE:{ label:'Available', tone:'success', icon:'circle-check' },
+  RESERVED: { label:'Occupied',  tone:'warning', icon:'users' },
+};
+
+11. CHANGE POLICY
+---------------------------------------------------------------------
+  Only the theme owner (member 6) edits this file. Anyone can propose a
+  change in a PR titled "theme: ...". After a merge, update tokens.css and
+  tokens.ts in the SAME PR so web and mobile never drift.

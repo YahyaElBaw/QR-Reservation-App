@@ -1,0 +1,67 @@
+# Lancer tout le projet :  docker compose up --build
+services:
+
+  # Base de données MongoDB (locale, aucun compte nécessaire)
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # API NestJS  ->  http://localhost:3000/docs
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      # Par défaut : MongoDB local. Pour Atlas, mettre MONGO_URI dans le fichier .env
+      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/qrresto}
+      JWT_SECRET: ${JWT_SECRET:-secret-de-developpement-a-changer-123}
+      JWT_EXPIRES_IN: 8h
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-test}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-test}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-test}
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-QrCodeApp}
+      CLIENT_BASE_URL: ${CLIENT_BASE_URL:-http://localhost:8080}
+
+  # Crée les comptes, tables et menu de départ (une fois, puis s'arrête).
+  # Sans danger si relancé : ne recrée pas ce qui existe déjà.
+  seed:
+    build: ./backend
+    command: ["node", "dist/seed.js"]
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/qrresto}
+      JWT_SECRET: ${JWT_SECRET:-secret-de-developpement-a-changer-123}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-test}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-test}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-test}
+      CLIENT_BASE_URL: ${CLIENT_BASE_URL:-http://localhost:8080}
+
+  # Site Vue (compilé, servi par Nginx)  ->  http://localhost:8080
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo_data:
