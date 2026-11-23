@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Receipt, Search, AlertCircle, Wifi, X, Lock, Sparkles, QrCode, RefreshCw, BookOpen } from 'lucide-react-native';
+import { Receipt, Search, AlertCircle, Wifi, X, Lock, Sparkles, QrCode, RefreshCw } from 'lucide-react-native';
 import { useTheme } from '../../../src/theme/useTheme';
 import { api, API_BASE_URL, setApiBaseUrl } from '../../../src/services/api';
 import { setSocketBaseUrl, useLiveUpdates } from '../../../src/services/live';
@@ -49,7 +49,6 @@ export default function TableMenuScreen() {
   const [serverModalOpen, setServerModalOpen] = useState(false);
   const [customServerIp, setCustomServerIp] = useState('172.16.27.169');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
-  const [viewReadOnlyMenu, setViewReadOnlyMenu] = useState(false);
 
   const carts = useCartStore((s) => s.carts);
   const { addItem, updateQuantity } = useCartStore();
@@ -228,103 +227,51 @@ export default function TableMenuScreen() {
 
   const { table, activeTicket, lockedToOtherDevice } = tableData;
 
-  // 1. Full Screen: Table Closed / Occupied for other mobile devices
-  if (lockedToOtherDevice && !viewReadOnlyMenu) {
+  // 404 Full Screen: If table is closed / occupied by another device -> Clean 404 screen (nothing else shown)
+  if (lockedToOtherDevice) {
     return (
-      <View style={[styles.container, { backgroundColor: c.bg }]}>
-        {/* Table Header Bar */}
-        <View style={[styles.tableHeader, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
-          <View style={styles.tableInfo}>
-            <Text style={[styles.restaurantBadge, { color: c.primary700, fontFamily: fonts.display }]}>
-              RESTAURANT MÉDINA
-            </Text>
-            <View style={styles.tableNumberRow}>
-              <Text style={[styles.tableTitle, { color: c.text, fontFamily: fonts.display }]}>
-                Table {table.number}
-              </Text>
-              <StatusBadge status="RESERVED" type="table" size="sm" />
-            </View>
-          </View>
-        </View>
+      <View style={[styles.errorPageContainer, { backgroundColor: c.bg }]}>
+        <View style={styles.errorPageContent}>
+          {/* Big 404 Display */}
+          <Text style={[styles.error404Text, { color: c.border, fontFamily: fonts.display }]}>
+            404
+          </Text>
 
-        <ScrollView
-          contentContainerStyle={styles.closedScreenContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={tableLoading} onRefresh={onRefresh} colors={[c.primary500]} />
-          }
-        >
-          {/* Glowing Lock Illustration Box */}
-          <View style={[styles.closedIllustrationBox, { backgroundColor: c.warning100 }]}>
-            <View style={[styles.closedIconCircle, shadow[2], { backgroundColor: c.warning500 }]}>
-              <Lock size={38} color="#FFFFFF" strokeWidth={2.4} />
-            </View>
+          {/* Minimalist Lock Icon */}
+          <View style={[styles.errorIconCircle, shadow[1], { backgroundColor: c.surface, borderColor: c.border }]}>
+            <Lock size={30} color={c.warning500} strokeWidth={2.2} />
           </View>
 
           {/* Heading */}
-          <Text style={[styles.closedHeading, { color: c.text, fontFamily: fonts.display }]}>
+          <Text style={[styles.errorTitle, { color: c.text, fontFamily: fonts.displaySemi }]}>
             Table {table.number} Fermée
           </Text>
 
-          <View style={[styles.closedStatusBadge, { backgroundColor: c.warning100 }]}>
-            <Text style={[styles.closedStatusBadgeText, { color: c.warning500, fontFamily: fonts.bodyBold }]}>
-              TABLE OCCUPÉE PAR UN AUTRE CLIENT
-            </Text>
-          </View>
-
-          {/* Description */}
-          <Text style={[styles.closedDescription, { color: c.textMuted, fontFamily: fonts.body }]}>
-            Une addition est actuellement ouverte sur cette table par un autre téléphone. Les nouvelles commandes sont bloquées jusqu'à la libération de la table.
+          {/* Short minimalist message */}
+          <Text style={[styles.errorDescription, { color: c.textMuted, fontFamily: fonts.body }]}>
+            Cette table est actuellement fermée ou occupée par un autre client. Aucune commande ne peut être passée depuis cet appareil.
           </Text>
 
-          {/* Helpful steps card */}
-          <View style={[styles.closedInfoCard, shadow[1], { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Text style={[styles.closedInfoCardTitle, { color: c.text, fontFamily: fonts.displaySemi }]}>
-              Que devez-vous faire ?
-            </Text>
-            <View style={styles.closedStepRow}>
-              <Text style={[styles.stepBullet, { color: c.primary700, fontFamily: fonts.bodyBold }]}>1.</Text>
-              <Text style={[styles.stepText, { color: c.textMuted, fontFamily: fonts.body }]}>
-                Si vous venez de vous asseoir, prévenez le serveur pour qu'il libère la table dans le système.
-              </Text>
-            </View>
-            <View style={styles.closedStepRow}>
-              <Text style={[styles.stepBullet, { color: c.primary700, fontFamily: fonts.bodyBold }]}>2.</Text>
-              <Text style={[styles.stepText, { color: c.textMuted, fontFamily: fonts.body }]}>
-                Ou installez-vous à une table disponible et scannez son QR code.
-              </Text>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.closedActionsGroup}>
+          {/* Action buttons */}
+          <View style={styles.errorActions}>
             <Button
               title="Scanner une autre table"
               variant="primary"
-              size="lg"
-              icon={<QrCode size={18} color="#FFFFFF" />}
+              size="md"
+              icon={<QrCode size={16} color="#FFFFFF" />}
               onPress={() => router.replace('/(customer)/scan')}
             />
 
             <Button
-              title="Vérifier si la table est libérée"
-              variant="secondary"
-              size="md"
-              icon={<RefreshCw size={16} color={c.primary700} />}
-              onPress={onRefresh}
-              style={{ marginTop: 10 }}
-            />
-
-            <Button
-              title="Consulter le menu (lecture seule)"
+              title="Actualiser"
               variant="ghost"
               size="sm"
-              icon={<BookOpen size={16} color={c.textMuted} />}
-              onPress={() => setViewReadOnlyMenu(true)}
+              icon={<RefreshCw size={14} color={c.textMuted} />}
+              onPress={onRefresh}
               style={{ marginTop: 8 }}
             />
           </View>
-        </ScrollView>
+        </View>
       </View>
     );
   }
@@ -345,7 +292,7 @@ export default function TableMenuScreen() {
           </View>
         </View>
 
-        {activeTicket && activeTicket.status === 'OPEN' && !lockedToOtherDevice && (
+        {activeTicket && activeTicket.status === 'OPEN' && (
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => router.push(`/(customer)/ticket/${qrToken}`)}
@@ -364,7 +311,7 @@ export default function TableMenuScreen() {
       </View>
 
       {/* Active Session Reorder Banner for the Owner Phone */}
-      {activeTicket && activeTicket.status === 'OPEN' && !lockedToOtherDevice && (
+      {activeTicket && activeTicket.status === 'OPEN' && (
         <View style={[styles.ownerActiveBanner, { backgroundColor: c.primary50, borderColor: c.primary100 }]}>
           <Sparkles size={18} color={c.primary700} style={{ marginRight: 8, marginTop: 1 }} />
           <View style={{ flex: 1 }}>
@@ -375,29 +322,6 @@ export default function TableMenuScreen() {
               Ajoutez d'autres plats ou boissons : ils s'ajouteront directement à votre commande #{activeTicket.ticketNumber}.
             </Text>
           </View>
-        </View>
-      )}
-
-      {/* Return to Closed Screen Banner when in read-only menu mode */}
-      {lockedToOtherDevice && (
-        <View style={[styles.readOnlyTopBar, { backgroundColor: c.warning100, borderColor: c.warning500 }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.readOnlyTopBarTitle, { color: c.warning500, fontFamily: fonts.bodyBold }]}>
-              Table {table.number} fermée • Consultation seule
-            </Text>
-            <Text style={[styles.readOnlyTopBarDesc, { color: c.textMuted, fontFamily: fonts.body }]}>
-              Commandes désactivées pour ce téléphone.
-            </Text>
-          </View>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.returnToClosedBtn, shadow[1], { backgroundColor: c.surface }]}
-            onPress={() => setViewReadOnlyMenu(false)}
-          >
-            <Text style={[styles.returnToClosedBtnText, { color: c.text, fontFamily: fonts.bodyBold }]}>
-              Écran table
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -566,108 +490,50 @@ const styles = StyleSheet.create({
   activeTicketText: {
     fontSize: 13,
   },
-  closedScreenContent: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 48,
-    alignItems: 'center',
-  },
-  closedIllustrationBox: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  errorPageContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    padding: 24,
   },
-  closedIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+  errorPageContent: {
+    width: '100%',
+    maxWidth: 320,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  closedHeading: {
-    fontSize: 26,
-    letterSpacing: -0.5,
+  error404Text: {
+    fontSize: 88,
+    lineHeight: 96,
+    letterSpacing: -2,
+    opacity: 0.3,
+    marginBottom: -12,
+  },
+  errorIconCircle: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 21,
+    letterSpacing: -0.3,
     textAlign: 'center',
     marginBottom: 8,
   },
-  closedStatusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    marginBottom: 16,
-  },
-  closedStatusBadgeText: {
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  closedDescription: {
+  errorDescription: {
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
     textAlign: 'center',
     marginBottom: 24,
     paddingHorizontal: 8,
   },
-  closedInfoCard: {
+  errorActions: {
     width: '100%',
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  closedInfoCardTitle: {
-    fontSize: 15,
-    marginBottom: 10,
-  },
-  closedStepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  stepBullet: {
-    width: 20,
-    fontSize: 13,
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  closedActionsGroup: {
-    width: '100%',
-  },
-  scanBtn: {
-    width: '100%',
-  },
-  readOnlyTopBar: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginHorizontal: 12,
-    marginTop: 8,
-    marginBottom: 4,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  readOnlyTopBarTitle: {
-    fontSize: 12.5,
-  },
-  readOnlyTopBarDesc: {
-    fontSize: 11,
-    marginTop: 1,
-  },
-  returnToClosedBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-  returnToClosedBtnText: {
-    fontSize: 12,
   },
   ownerActiveBanner: {
     flexDirection: 'row',
@@ -686,62 +552,6 @@ const styles = StyleSheet.create({
   ownerActiveBannerText: {
     fontSize: 12,
     lineHeight: 16,
-  },
-  lockedCard: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 6,
-    padding: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-  },
-  lockedHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
-  },
-  lockIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  lockedTitle: {
-    fontSize: 16,
-    letterSpacing: -0.2,
-  },
-  lockedSub: {
-    fontSize: 12,
-    marginTop: 1,
-  },
-  lockedBody: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  lockedActions: {
-    marginBottom: 6,
-  },
-  readOnlyNotice: {
-    fontSize: 11.5,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  lockedBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginHorizontal: 16,
-    marginTop: 10,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  lockedBannerText: {
-    flex: 1,
-    fontSize: 12.5,
-    lineHeight: 18,
   },
   heroSection: {
     paddingHorizontal: 16,
