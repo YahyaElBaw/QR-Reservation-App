@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { io, type Socket } from 'socket.io-client'
-import { useDark, useToggle } from '@vueuse/core'
 import {
   ShoppingBag,
   Plus,
@@ -21,8 +20,32 @@ import { api } from '../services/api'
 import type { Category, Product, Ticket } from '../types'
 import MoneyText from '../components/MoneyText.vue'
 
-const isDark = useDark({ attribute: 'data-theme', valueDark: 'dark', valueLight: 'light' })
-const toggleDark = useToggle(isDark)
+const isDark = ref(false)
+
+function applyTheme(dark: boolean) {
+  isDark.value = dark
+  const theme = dark ? 'dark' : 'light'
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', theme)
+    if (dark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+    document.documentElement.style.backgroundColor = dark ? '#0a1622' : '#f6f9fc'
+    if (document.body) {
+      document.body.style.backgroundColor = dark ? '#0a1622' : '#f6f9fc'
+    }
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('medina.theme', theme)
+    localStorage.setItem('vueuse-color-scheme', theme)
+  }
+}
+
+function toggleDark() {
+  applyTheme(!isDark.value)
+}
 
 const route = useRoute()
 const { t } = useI18n()
@@ -215,6 +238,18 @@ let liveSocket: Socket | undefined
 let pollInterval: ReturnType<typeof setInterval> | undefined
 
 onMounted(() => {
+  const saved =
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem('medina.theme') || localStorage.getItem('vueuse-color-scheme')
+      : null
+  if (saved) {
+    applyTheme(saved === 'dark')
+  } else if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme(true)
+  } else {
+    applyTheme(false)
+  }
+
   void loadData()
 
   // Realtime Socket.IO room subscription for table:<qrToken>
@@ -259,7 +294,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="customer-page">
+  <div class="customer-page" :class="{ 'dark-theme': isDark }">
     <!-- Redesigned Top Bar (Identical to Mobile Native Top Bar) -->
     <header class="mobile-top-bar">
       <div class="top-bar-inner">
@@ -1631,115 +1666,248 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-/* Dark Mode Overrides for Customer Page */
-:global([data-theme='dark']) .customer-page {
+/* Dark Mode Styling for Customer Page */
+.customer-page.dark-theme {
   background-color: #0a1622;
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .mobile-top-bar {
+.customer-page.dark-theme .mobile-top-bar {
   background: #11222f;
   border-bottom-color: #25394b;
 }
-:global([data-theme='dark']) .restaurant-name {
+.customer-page.dark-theme .restaurant-name {
   color: #89bae8;
 }
-:global([data-theme='dark']) .table-number-title {
+.customer-page.dark-theme .table-number-title {
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .top-bar-icon-btn.ticket-btn {
+.customer-page.dark-theme .table-status-pill.available {
+  background: #133928;
+  color: #3cc48c;
+}
+.customer-page.dark-theme .table-status-pill.reserved {
+  background: #3d2808;
+  color: #f0a93a;
+}
+.customer-page.dark-theme .top-bar-icon-btn {
+  background: #182d3d;
+  border-color: #25394b;
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .top-bar-icon-btn.ticket-btn {
   background: #18314a;
   border-color: #25394b;
   color: #89bae8;
 }
-:global([data-theme='dark']) .top-bar-icon-btn.theme-btn {
+.customer-page.dark-theme .top-bar-icon-btn.ticket-btn:hover {
+  background: #234160;
+}
+.customer-page.dark-theme .top-bar-icon-btn.theme-btn {
   background: #182d3d;
   border-color: #25394b;
   color: #f5b94a;
 }
-:global([data-theme='dark']) .hero-greeting {
+.customer-page.dark-theme .hero-greeting {
   color: #9fb1c3;
 }
-:global([data-theme='dark']) .hero-headline {
+.customer-page.dark-theme .hero-headline {
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .hero-headline .highlight {
+.customer-page.dark-theme .hero-headline .highlight {
   color: #4c9ae8;
 }
-:global([data-theme='dark']) .search-input {
+.customer-page.dark-theme .search-input {
   background: #11222f;
   border-color: #25394b;
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .cat-chip {
+.customer-page.dark-theme .search-input:focus {
+  border-color: #4c9ae8;
+  box-shadow: 0 0 0 3px rgba(76, 154, 232, 0.2);
+}
+.customer-page.dark-theme .search-icon {
+  color: #657b91;
+}
+.customer-page.dark-theme .clear-search-btn {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .cat-chip {
   background: #11222f;
   border-color: #25394b;
   color: #9fb1c3;
 }
-:global([data-theme='dark']) .cat-chip.active {
+.customer-page.dark-theme .cat-chip.active {
   background: #1b67b5;
   border-color: #1b67b5;
   color: #ffffff;
 }
-:global([data-theme='dark']) .customer-product-card {
-  background: #11222f;
-  border-color: #25394b;
-}
-:global([data-theme='dark']) .prod-image-wrap {
-  background: #182d3d;
-}
-:global([data-theme='dark']) .prod-name {
-  color: #eaf1f8;
-}
-:global([data-theme='dark']) .prod-desc {
+.customer-page.dark-theme .toolbar-count {
   color: #9fb1c3;
 }
-:global([data-theme='dark']) .prod-price {
+.customer-page.dark-theme .customer-product-card {
+  background: #11222f;
+  border-color: #25394b;
+}
+.customer-page.dark-theme .customer-product-card.selected {
+  border-color: #4c9ae8;
+  box-shadow: 0 3px 10px rgba(76, 154, 232, 0.25);
+}
+.customer-page.dark-theme .prod-image-wrap {
+  background: #182d3d;
+}
+.customer-page.dark-theme .placeholder-icon {
+  color: #657b91;
+}
+.customer-page.dark-theme .prod-name {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .prod-desc {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .prod-price {
   color: #89bae8;
 }
-:global([data-theme='dark']) .bottom-sheet-modal {
+.customer-page.dark-theme .stepper-capsule {
+  background: #18314a;
+  border-color: #25394b;
+}
+.customer-page.dark-theme .stepper-btn.minus {
+  color: #89bae8;
+}
+.customer-page.dark-theme .stepper-qty {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .locked-capsule {
+  background: #182d3d;
+  color: #657b91;
+}
+.customer-page.dark-theme .state-text {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .floating-cart-inner {
+  background: #182d3d;
+  border: 1px solid #25394b;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.customer-page.dark-theme .bottom-sheet-modal {
   background: #11222f;
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .sheet-header {
+.customer-page.dark-theme .sheet-header {
   border-bottom-color: #25394b;
 }
-:global([data-theme='dark']) .sheet-title {
+.customer-page.dark-theme .sheet-title {
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .ticket-meta-box {
+.customer-page.dark-theme .sheet-close-btn {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .modal-image-box {
   background: #182d3d;
-  border-color: #25394b;
 }
-:global([data-theme='dark']) .ticket-num-text {
-  color: #eaf1f8;
+.customer-page.dark-theme .modal-price-label {
+  color: #9fb1c3;
 }
-:global([data-theme='dark']) .ticket-item-row {
-  border-bottom-color: #25394b;
-}
-:global([data-theme='dark']) .ticket-item-name {
-  color: #eaf1f8;
-}
-:global([data-theme='dark']) .ticket-item-right {
-  color: #eaf1f8;
-}
-:global([data-theme='dark']) .ticket-total-val {
+.customer-page.dark-theme .modal-price-val {
   color: #89bae8;
 }
-:global([data-theme='dark']) .ticket-close-btn {
+.customer-page.dark-theme .modal-desc {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .control-label {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .stepper-action-btn {
   background: #18314a;
   border-color: #25394b;
   color: #89bae8;
 }
-:global([data-theme='dark']) .cart-item-card {
+.customer-page.dark-theme .modal-stepper-val {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .modal-note-input {
+  background: #182d3d;
+  border-color: #25394b;
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .modal-closed-notice {
+  background: #3d2808;
+  color: #f0a93a;
+}
+.customer-page.dark-theme .cart-item-card {
   background: #182d3d;
   border-color: #25394b;
 }
-:global([data-theme='dark']) .cart-prod-name {
+.customer-page.dark-theme .cart-prod-name {
   color: #eaf1f8;
 }
-:global([data-theme='dark']) .cart-note-field {
+.customer-page.dark-theme .cart-prod-unit-price {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .cart-note-field {
   background: #11222f;
   border-color: #25394b;
   color: #eaf1f8;
+}
+.customer-page.dark-theme .cart-item-subtotal {
+  color: #89bae8;
+}
+.customer-page.dark-theme .cart-footer {
+  border-top-color: #25394b;
+}
+.customer-page.dark-theme .total-label {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .total-amount {
+  color: #89bae8;
+}
+.customer-page.dark-theme .ticket-meta-box {
+  background: #182d3d;
+  border-color: #25394b;
+}
+.customer-page.dark-theme .ticket-num-text {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .ticket-articles-count {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .ticket-status-badge.open {
+  background: #3d2808;
+  color: #f0a93a;
+}
+.customer-page.dark-theme .ticket-status-badge.paid {
+  background: #133928;
+  color: #3cc48c;
+}
+.customer-page.dark-theme .paid-notice-banner {
+  background: #133928;
+  color: #3cc48c;
+  border-color: #1f5e42;
+}
+.customer-page.dark-theme .ticket-item-row {
+  border-bottom-color: #25394b;
+}
+.customer-page.dark-theme .ticket-item-name {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .ticket-item-qtyprice {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .ticket-item-right {
+  color: #eaf1f8;
+}
+.customer-page.dark-theme .ticket-footer {
+  border-top-color: #25394b;
+}
+.customer-page.dark-theme .ticket-total-label {
+  color: #9fb1c3;
+}
+.customer-page.dark-theme .ticket-total-val {
+  color: #89bae8;
+}
+.customer-page.dark-theme .ticket-close-btn {
+  background: #18314a;
+  border-color: #25394b;
+  color: #89bae8;
 }
 </style>
