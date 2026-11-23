@@ -76,24 +76,74 @@ export class TicketsService {
     return t ? this.getView(t.id as string) : null;
   }
 
+  isTicketOwner(
+    ticket: { clientIp?: string | null; clientDeviceId?: string | null },
+    clientIp?: string,
+    deviceId?: string,
+  ): boolean {
+    const ticketIp = ticket.clientIp;
+    const ticketDevice = ticket.clientDeviceId;
+
+    // If ticket has neither IP nor deviceId registered, no lock restriction
+    if (!ticketIp && !ticketDevice) {
+      return true;
+    }
+
+    // If ticket has an IP locked, and caller provided an IP:
+    // If IPs do not match, it is NOT the same phone/IP!
+    if (ticketIp && clientIp && ticketIp !== clientIp) {
+      return false;
+    }
+
+    // If ticket has a deviceId locked:
+    if (ticketDevice) {
+      if (deviceId && deviceId === ticketDevice) {
+        return true;
+      }
+      // If caller has no deviceId, check if IP strictly matches
+      if (!deviceId && ticketIp && clientIp && ticketIp === clientIp) {
+        return true;
+      }
+      return false;
+    }
+
+    // Ticket only has IP lock
+    if (ticketIp) {
+      return Boolean(clientIp && ticketIp === clientIp);
+    }
+
+    return false;
+  }
+
   async publicTable(qrToken: string, clientIp?: string, deviceId?: string) {
     const table = await this.tableByQr(qrToken);
     const activeTicket = await this.activeTicketOfTable(table);
-    const hasLock = Boolean(activeTicket?.clientIp);
-    const isOwner = !hasLock || (
-      (activeTicket?.clientIp && clientIp && activeTicket.clientIp === clientIp) ||
-      (activeTicket?.clientDeviceId && deviceId && activeTicket.clientDeviceId === deviceId)
-    );
+
+    if (!activeTicket) {
+      return {
+        table: { number: table.number, status: table.status, qrToken: table.qrToken },
+        activeTicket: null,
+        isOwner: true,
+        lockedToOtherDevice: false,
+      };
+    }
+
+    const isOwner = this.isTicketOwner(activeTicket, clientIp, deviceId);
     return {
       table: { number: table.number, status: table.status, qrToken: table.qrToken },
-      activeTicket,
+      activeTicket: isOwner ? activeTicket : null,
       isOwner,
       lockedToOtherDevice: !isOwner,
     };
   }
 
-  async publicTicket(qrToken: string, _clientIp?: string): Promise<TicketView | null> {
-    return this.activeTicketOfTable(await this.tableByQr(qrToken));
+  async publicTicket(qrToken: string, clientIp?: string, deviceId?: string): Promise<TicketView | null> {
+    const table = await this.tableByQr(qrToken);
+    const active = await this.activeTicketOfTable(table);
+    if (!active) return null;
+    const isOwner = this.isTicketOwner(active, clientIp, deviceId);
+    if (!isOwner) return null;
+    return active;
   }
 
   // ------------------------------------------------------------ public order (core)
@@ -126,14 +176,12 @@ export class TicketsService {
   ): Promise<{ ticket: TicketDocument; created: boolean }> {
     const existing = await this.tickets.findOne({ tableId: table._id, status: TicketStatus.OPEN });
     if (existing) {
-      const hasIpLock = Boolean(existing.clientIp);
-      const isSameIp = !existing.clientIp || !clientIp || existing.clientIp === clientIp;
-      const isSameDevice = !existing.clientDeviceId || !deviceId || existing.clientDeviceId === deviceId;
-      if (hasIpLock && !isSameIp && !isSameDevice) {
+      const isOwner = this.isTicketOwner(existing, clientIp, deviceId);
+      if (!isOwner) {
         throw new AppException(
           403,
           'TABLE_OCCUPIED_BY_ANOTHER_CLIENT',
-          'Cette table est déjà réservée par un autre client. Seul le téléphone ayant ouvert la session peut modifier ou ajouter des articles jusqu\'à la libération de la table.',
+          'Cette table est déjà occupée par un autre client. Seul le téléphone ayant ouvert la session peut recommander jusqu\'à la libération de la table.',
         );
       }
       return { ticket: existing, created: false };
@@ -155,14 +203,12 @@ export class TicketsService {
       if (duplicateField(e) === 'tableId' || duplicateField(e) === 'unknown') {
         const winner = await this.tickets.findOne({ tableId: table._id, status: TicketStatus.OPEN });
         if (winner) {
-          const hasIpLock = Boolean(winner.clientIp);
-          const isSameIp = !winner.clientIp || !clientIp || winner.clientIp === clientIp;
-          const isSameDevice = !winner.clientDeviceId || !deviceId || winner.clientDeviceId === deviceId;
-          if (hasIpLock && !isSameIp && !isSameDevice) {
+          const isOwner = this.isTicketOwner(winner, clientIp, deviceId);
+          if (!isOwner) {
             throw new AppException(
               403,
               'TABLE_OCCUPIED_BY_ANOTHER_CLIENT',
-              'Cette table est déjà réservée par un autre client.',
+              'Cette table est déjà occupée par un autre client.',
             );
           }
           return { ticket: winner, created: false };

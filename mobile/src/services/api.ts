@@ -27,7 +27,7 @@ const getInitialBaseUrl = (): string => {
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL;
   }
-  return 'http://192.168.1.128:3000/api/v1';
+  return 'http://172.16.27.169:3000/api/v1';
 };
 
 export let API_BASE_URL = getInitialBaseUrl();
@@ -113,8 +113,10 @@ export const api = {
     return res.data;
   },
 
-  publicTicket: async (qrToken: string) => {
-    const res = await http.get<Ticket | null>(`/public/tables/${qrToken}/ticket`);
+  publicTicket: async (qrToken: string, deviceId?: string) => {
+    const res = await http.get<Ticket | null>(`/public/tables/${qrToken}/ticket`, {
+      params: deviceId ? { deviceId } : undefined,
+    });
     return res.data;
   },
 

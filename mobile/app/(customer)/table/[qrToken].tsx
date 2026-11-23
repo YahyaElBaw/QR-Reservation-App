@@ -46,7 +46,7 @@ export default function TableMenuScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cartModalOpen, setCartModalOpen] = useState(false);
   const [serverModalOpen, setServerModalOpen] = useState(false);
-  const [customServerIp, setCustomServerIp] = useState('192.168.1.128');
+  const [customServerIp, setCustomServerIp] = useState('172.16.27.169');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
 
   const carts = useCartStore((s) => s.carts);
@@ -242,7 +242,7 @@ export default function TableMenuScreen() {
           </View>
         </View>
 
-        {activeTicket && activeTicket.status === 'OPEN' && (
+        {activeTicket && activeTicket.status === 'OPEN' && !lockedToOtherDevice && (
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => router.push(`/(customer)/ticket/${qrToken}`)}
@@ -260,12 +260,53 @@ export default function TableMenuScreen() {
         )}
       </View>
 
-      {/* Lock banner if reserved by another device */}
+      {/* Active Session Reorder Banner for the Owner Phone */}
+      {activeTicket && activeTicket.status === 'OPEN' && !lockedToOtherDevice && (
+        <View style={[styles.ownerActiveBanner, { backgroundColor: c.primary50, borderColor: c.primary100 }]}>
+          <Sparkles size={18} color={c.primary700} style={{ marginRight: 8, marginTop: 1 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.ownerActiveBannerTitle, { color: c.primary900, fontFamily: fonts.bodyBold }]}>
+              Session active • Recommandez à tout moment
+            </Text>
+            <Text style={[styles.ownerActiveBannerText, { color: c.primary900, fontFamily: fonts.body }]}>
+              Ajoutez d'autres plats ou boissons : ils s'ajouteront directement à votre commande #{activeTicket.ticketNumber}.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Prominent Table Occupée / Closed Card for Other Mobile Phones */}
       {lockedToOtherDevice && (
-        <View style={[styles.lockedBanner, { backgroundColor: c.warning100, borderColor: c.warning500 }]}>
-          <Lock size={18} color={c.warning500} style={{ marginRight: 8, marginTop: 1 }} />
-          <Text style={[styles.lockedBannerText, { color: c.text, fontFamily: fonts.bodyMedium }]}>
-            Cette table a une addition ouverte par un autre téléphone. Le menu est disponible en consultation seule tant que la table est ouverte.
+        <View style={[styles.lockedCard, shadow[1], { backgroundColor: c.surface, borderColor: c.warning500 }]}>
+          <View style={styles.lockedHeaderRow}>
+            <View style={[styles.lockIconCircle, { backgroundColor: c.warning100 }]}>
+              <Lock size={20} color={c.warning500} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.lockedTitle, { color: c.text, fontFamily: fonts.displaySemi }]}>
+                Table actuellement occupée
+              </Text>
+              <Text style={[styles.lockedSub, { color: c.warning500, fontFamily: fonts.bodyBold }]}>
+                Fermée aux nouvelles commandes
+              </Text>
+            </View>
+          </View>
+
+          <Text style={[styles.lockedBody, { color: c.textMuted, fontFamily: fonts.body }]}>
+            Cette table a une commande ouverte par un autre téléphone. Seul ce téléphone peut recommander ou modifier la commande.
+          </Text>
+
+          <View style={styles.lockedActions}>
+            <Button
+              title="Scanner une autre table"
+              variant="primary"
+              size="sm"
+              onPress={() => router.replace('/(customer)/scan')}
+            />
+          </View>
+
+          <Text style={[styles.readOnlyNotice, { color: c.textFaint, fontFamily: fonts.body }]}>
+            📖 Menu en consultation seule ci-dessous
           </Text>
         </View>
       )}
@@ -357,6 +398,7 @@ export default function TableMenuScreen() {
         visible={!!selectedProductForDetail}
         initialQuantity={selectedProductForDetail ? getProductCartQty(selectedProductForDetail._id) : 1}
         onClose={() => setSelectedProductForDetail(null)}
+        disabled={lockedToOtherDevice}
         onAddToCart={(prod, qty, note) => {
           addItem(qrToken as string, prod, qty, note);
         }}
@@ -433,6 +475,66 @@ const styles = StyleSheet.create({
   },
   activeTicketText: {
     fontSize: 13,
+  },
+  ownerActiveBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 4,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  ownerActiveBannerTitle: {
+    fontSize: 13.5,
+    marginBottom: 2,
+  },
+  ownerActiveBannerText: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  lockedCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  lockedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  lockIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedTitle: {
+    fontSize: 16,
+    letterSpacing: -0.2,
+  },
+  lockedSub: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  lockedBody: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  lockedActions: {
+    marginBottom: 6,
+  },
+  readOnlyNotice: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    marginTop: 4,
   },
   lockedBanner: {
     flexDirection: 'row',

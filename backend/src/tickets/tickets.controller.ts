@@ -75,8 +75,13 @@ export class PublicTicketsController {
 
   /** Returns the ticket or a literal JSON null. */
   @Public() @Get(':qrToken/ticket')
-  async ticket(@Param('qrToken') qrToken: string, @Req() req: Request, @Res() res: Response): Promise<void> {
+  async ticket(
+    @Param('qrToken') qrToken: string,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('deviceId') deviceId?: string,
+  ): Promise<void> {
     const ip = extractClientIp(req);
-    res.status(200).json(await this.tickets.publicTicket(qrToken, ip));
+    res.status(200).json(await this.tickets.publicTicket(qrToken, ip, deviceId));
   }
 }

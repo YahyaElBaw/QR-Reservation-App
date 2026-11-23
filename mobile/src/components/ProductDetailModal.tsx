@@ -10,7 +10,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { X, Heart, Star, Plus, Minus, Utensils, ShoppingBag } from 'lucide-react-native';
+import { X, Heart, Star, Plus, Minus, Utensils, ShoppingBag, Lock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../theme/useTheme';
 import { MoneyText } from './ui/MoneyText';
@@ -22,6 +22,7 @@ interface ProductDetailModalProps {
   onClose: () => void;
   onAddToCart: (product: Product, quantity: number, note?: string) => void;
   initialQuantity?: number;
+  disabled?: boolean;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -30,6 +31,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onAddToCart,
   initialQuantity = 1,
+  disabled = false,
 }) => {
   const { c, radius, fonts, shadow } = useTheme();
   const [quantity, setQuantity] = useState(1);
@@ -76,6 +78,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   const handleAdd = () => {
+    if (disabled || !product.available) return;
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch {}
@@ -225,10 +228,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     borderRadius: radius.md,
                   },
                 ]}
-                placeholder="Ex : sans sauce, très chaud, bien cuit..."
+                placeholder={disabled ? "Commande désactivée sur cette table" : "Ex : sans sauce, très chaud, bien cuit..."}
                 placeholderTextColor={c.textFaint}
                 value={note}
                 onChangeText={setNote}
+                editable={!disabled}
                 maxLength={140}
                 multiline
                 numberOfLines={2}
@@ -248,68 +252,89 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               },
             ]}
           >
-            {/* Stepper capsule */}
-            <View
-              style={[
-                styles.stepperContainer,
-                {
-                  backgroundColor: c.surfaceAlt,
-                  borderRadius: radius.full,
-                  borderColor: c.border,
-                },
-              ]}
-            >
-              <TouchableOpacity
-                onPress={handleDecrement}
-                disabled={quantity <= 1}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={[styles.stepperBtn, quantity <= 1 && styles.stepperBtnDisabled]}
-                accessibilityLabel="Diminuer la quantité"
-              >
-                <Minus size={18} color={quantity <= 1 ? c.textFaint : c.text} strokeWidth={2.5} />
-              </TouchableOpacity>
-
-              <Text style={[styles.stepperValue, { color: c.text, fontFamily: fonts.bodyBold }]}>
-                {quantity}
-              </Text>
-
-              <TouchableOpacity
-                onPress={handleIncrement}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.stepperBtn}
-                accessibilityLabel="Augmenter la quantité"
-              >
-                <Plus size={18} color={c.text} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Glowing Accent Add to Cart Button */}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleAdd}
-              disabled={!product.available}
-              style={[
-                styles.addCartBtn,
-                shadow[2],
-                {
-                  backgroundColor: product.available ? c.primary700 : c.surfaceAlt,
-                  borderRadius: radius.full,
-                },
-              ]}
-            >
-              <ShoppingBag size={18} color={product.available ? '#FFFFFF' : c.textFaint} style={{ marginRight: 8 }} />
-              <Text
+            {disabled ? (
+              <View
                 style={[
-                  styles.addCartBtnText,
+                  styles.disabledActionBar,
                   {
-                    color: product.available ? '#FFFFFF' : c.textFaint,
-                    fontFamily: fonts.bodyBold,
+                    backgroundColor: c.surfaceAlt,
+                    borderRadius: radius.full,
+                    borderColor: c.border,
+                    borderWidth: 1,
                   },
                 ]}
               >
-                Ajouter • {totalAmount.toFixed(3)} TND
-              </Text>
-            </TouchableOpacity>
+                <Lock size={16} color={c.textMuted} style={{ marginRight: 8 }} />
+                <Text style={[styles.disabledActionText, { color: c.textMuted, fontFamily: fonts.bodyMedium }]}>
+                  Table occupée • Commande désactivée
+                </Text>
+              </View>
+            ) : (
+              <>
+                {/* Stepper capsule */}
+                <View
+                  style={[
+                    styles.stepperContainer,
+                    {
+                      backgroundColor: c.surfaceAlt,
+                      borderRadius: radius.full,
+                      borderColor: c.border,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity
+                    onPress={handleDecrement}
+                    disabled={quantity <= 1}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={[styles.stepperBtn, quantity <= 1 && styles.stepperBtnDisabled]}
+                    accessibilityLabel="Diminuer la quantité"
+                  >
+                    <Minus size={18} color={quantity <= 1 ? c.textFaint : c.text} strokeWidth={2.5} />
+                  </TouchableOpacity>
+
+                  <Text style={[styles.stepperValue, { color: c.text, fontFamily: fonts.bodyBold }]}>
+                    {quantity}
+                  </Text>
+
+                  <TouchableOpacity
+                    onPress={handleIncrement}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    style={styles.stepperBtn}
+                    accessibilityLabel="Augmenter la quantité"
+                  >
+                    <Plus size={18} color={c.text} strokeWidth={2.5} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Glowing Accent Add to Cart Button */}
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleAdd}
+                  disabled={!product.available}
+                  style={[
+                    styles.addCartBtn,
+                    shadow[2],
+                    {
+                      backgroundColor: product.available ? c.primary700 : c.surfaceAlt,
+                      borderRadius: radius.full,
+                    },
+                  ]}
+                >
+                  <ShoppingBag size={18} color={product.available ? '#FFFFFF' : c.textFaint} style={{ marginRight: 8 }} />
+                  <Text
+                    style={[
+                      styles.addCartBtnText,
+                      {
+                        color: product.available ? '#FFFFFF' : c.textFaint,
+                        fontFamily: fonts.bodyBold,
+                      },
+                    ]}
+                  >
+                    Ajouter • {totalAmount.toFixed(3)} TND
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </View>
@@ -459,5 +484,16 @@ const styles = StyleSheet.create({
   },
   addCartBtnText: {
     fontSize: 15,
+  },
+  disabledActionBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
+    paddingHorizontal: 16,
+  },
+  disabledActionText: {
+    fontSize: 14,
   },
 });

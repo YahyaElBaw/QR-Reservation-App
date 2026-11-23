@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { Receipt, PlusCircle, CheckCircle, Lock, RotateCcw } from 'lucide-react-
 import { useTheme } from '../../../src/theme/useTheme';
 import { api } from '../../../src/services/api';
 import { useLiveUpdates } from '../../../src/services/live';
+import { getOrCreateDeviceId } from '../../../src/utils/deviceId';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import { MoneyText } from '../../../src/components/ui/MoneyText';
 import { Button } from '../../../src/components/ui/Button';
@@ -24,13 +25,19 @@ export default function CustomerTicketScreen() {
   const router = useRouter();
   const { c, radius, fonts, shadow } = useTheme();
 
+  const [deviceId, setDeviceId] = useState<string>('');
+
+  useEffect(() => {
+    getOrCreateDeviceId().then(setDeviceId).catch(() => {});
+  }, []);
+
   const {
     data: ticket,
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ['publicTicket', qrToken],
-    queryFn: () => api.publicTicket(qrToken as string),
+    queryKey: ['publicTicket', qrToken, deviceId],
+    queryFn: () => api.publicTicket(qrToken as string, deviceId),
     enabled: !!qrToken,
     refetchInterval: 5000, // 5s fallback polling per 00_SHARED_CONTEXT.md
   });
