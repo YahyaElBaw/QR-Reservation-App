@@ -14,8 +14,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation, Stack } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
-import { Receipt, Search, AlertCircle, Wifi, X } from 'lucide-react-native';
+import { Receipt, Search, AlertCircle, Wifi, X, Sun, Moon } from 'lucide-react-native';
 import { useTheme } from '../../../src/theme/useTheme';
 import { api, API_BASE_URL, setApiBaseUrl } from '../../../src/services/api';
 import { setSocketBaseUrl, useLiveUpdates } from '../../../src/services/live';
@@ -37,7 +38,8 @@ export default function TableMenuScreen() {
   const { qrToken } = useLocalSearchParams<{ qrToken: string }>();
   const router = useRouter();
   const navigation = useNavigation();
-  const { c, radius, fonts, shadow } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { c, radius, fonts, shadow, isDark, toggleTheme } = useTheme();
   const { width: screenWidth } = useWindowDimensions();
 
   // Exactly 2 cards per row calculated dynamically
@@ -135,46 +137,7 @@ export default function TableMenuScreen() {
     return item ? item.quantity : 0;
   };
 
-  useEffect(() => {
-    if (tableData?.table) {
-      const showBtn = Boolean(
-        tableData.activeTicket &&
-        !tableData.lockedToOtherDevice &&
-        tableData.activeTicket.status !== 'CLOSED'
-      );
-      navigation.setOptions({
-        title: `Table ${tableData.table.number}`,
-        headerRight: showBtn
-          ? () => (
-              <TouchableOpacity
-                onPress={() => setTicketModalOpen(true)}
-                activeOpacity={0.7}
-                style={[
-                  styles.headerTicketBtn,
-                  shadow[1],
-                  {
-                    backgroundColor: c.primary50,
-                    borderColor: c.primary100,
-                  },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel="Voir le ticket"
-              >
-                <Receipt size={16} color={c.primary700} />
-                <Text
-                  style={[
-                    styles.headerTicketText,
-                    { color: c.primary900, fontFamily: fonts.bodyBold },
-                  ]}
-                >
-                  Ticket
-                </Text>
-              </TouchableOpacity>
-            )
-          : () => null,
-      });
-    }
-  }, [tableData, navigation, c, fonts, shadow]);
+
 
   const handleApplyServerIp = () => {
     if (!customServerIp.trim()) return;
@@ -266,51 +229,70 @@ export default function TableMenuScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      <Stack.Screen
-        options={{
-          title: `Table ${table.number}`,
-          headerRight: showTicketButton
-            ? () => (
-                <TouchableOpacity
-                  onPress={() => setTicketModalOpen(true)}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.headerTicketBtn,
-                    shadow[1],
-                    {
-                      backgroundColor: c.primary50,
-                      borderColor: c.primary100,
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Voir le ticket"
-                >
-                  <Receipt size={16} color={c.primary700} />
-                  <Text
-                    style={[
-                      styles.headerTicketText,
-                      { color: c.primary900, fontFamily: fonts.bodyBold },
-                    ]}
-                  >
-                    Ticket
-                  </Text>
-                </TouchableOpacity>
-              )
-            : () => null,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Table Header Bar */}
-      <View style={[styles.tableHeader, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
-        <View style={styles.tableInfo}>
-          <Text style={[styles.restaurantBadge, { color: c.primary700, fontFamily: fonts.display }]}>
-            RESTAURANT MÉDINA
-          </Text>
-          <View style={styles.tableNumberRow}>
-            <Text style={[styles.tableTitle, { color: c.text, fontFamily: fonts.display }]}>
-              Table {table.number}
+      {/* Redesigned Top Bar */}
+      <View
+        style={[
+          styles.topBar,
+          {
+            backgroundColor: c.surface,
+            borderBottomColor: c.border,
+            paddingTop: Math.max(insets.top, 10),
+          },
+        ]}
+      >
+        <View style={styles.topBarInner}>
+          {/* Left: Restaurant Médina & Table number (under resto name) */}
+          <View style={styles.topBarLeft}>
+            <Text style={[styles.restaurantName, { color: c.primary700, fontFamily: fonts.display }]}>
+              Restaurant Médina
             </Text>
-            <StatusBadge status={table.status} type="table" size="sm" />
+            <View style={styles.tableNumberRow}>
+              <Text style={[styles.tableNumberText, { color: c.text, fontFamily: fonts.display }]}>
+                Table {table.number}
+              </Text>
+              <StatusBadge status={table.status} type="table" size="sm" />
+            </View>
+          </View>
+
+          {/* Right: Ticket icon & Theme icon */}
+          <View style={styles.topBarRight}>
+            {/* Ticket icon button (to open ticket) */}
+            {showTicketButton && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setTicketModalOpen(true)}
+                style={[
+                  styles.topBarIconBtn,
+                  shadow[1],
+                  { backgroundColor: c.primary50, borderColor: c.primary100 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Consulter l'addition"
+              >
+                <Receipt size={18} color={c.primary700} />
+              </TouchableOpacity>
+            )}
+
+            {/* Theme icon button (dark / light mode toggle) */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={toggleTheme}
+              style={[
+                styles.topBarIconBtn,
+                shadow[1],
+                { backgroundColor: c.surfaceAlt, borderColor: c.border },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={isDark ? 'Mode clair' : 'Mode sombre'}
+            >
+              {isDark ? (
+                <Sun size={18} color={c.accent500} />
+              ) : (
+                <Moon size={18} color={c.text} />
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -454,43 +436,46 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 15,
   },
-  tableHeader: {
+  topBar: {
+    borderBottomWidth: 1,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+  },
+  topBarInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
   },
-  tableInfo: {
-    gap: 2,
+  topBarLeft: {
+    gap: 1,
   },
-  restaurantBadge: {
-    fontSize: 10.5,
-    letterSpacing: 1.2,
+  restaurantName: {
+    fontSize: 12,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   tableNumberRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginTop: 1,
   },
-  tableTitle: {
+  tableNumberText: {
     fontSize: 22,
     letterSpacing: -0.3,
   },
-  headerTicketBtn: {
+  topBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 6,
-    marginRight: 6,
+    gap: 8,
   },
-  headerTicketText: {
-    fontSize: 13,
+  topBarIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   heroSection: {

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { io, type Socket } from 'socket.io-client'
+import { useDark, useToggle } from '@vueuse/core'
 import {
   ShoppingBag,
   Plus,
@@ -13,10 +14,15 @@ import {
   X,
   Lock,
   UtensilsCrossed,
+  Sun,
+  Moon,
 } from 'lucide-vue-next'
 import { api } from '../services/api'
 import type { Category, Product, Ticket } from '../types'
 import MoneyText from '../components/MoneyText.vue'
+
+const isDark = useDark({ attribute: 'data-theme', valueDark: 'dark', valueLight: 'light' })
+const toggleDark = useToggle(isDark)
 
 const route = useRoute()
 const { t } = useI18n()
@@ -254,13 +260,14 @@ onUnmounted(() => {
 
 <template>
   <div class="customer-page">
-    <!-- Top Bar Header (Identical to Mobile Native Top Bar) -->
+    <!-- Redesigned Top Bar (Identical to Mobile Native Top Bar) -->
     <header class="mobile-top-bar">
       <div class="top-bar-inner">
+        <!-- Left: Restaurant Medina & table number (under resto name) -->
         <div class="top-bar-left">
-          <span class="restaurant-badge">RESTAURANT MÉDINA</span>
-          <div class="table-title-row">
-            <h1 class="table-title">Table {{ tableNumber || '' }}</h1>
+          <span class="restaurant-name">Restaurant Médina</span>
+          <div class="table-number-row">
+            <h1 class="table-number-title">Table {{ tableNumber || '' }}</h1>
             <span
               class="table-status-pill"
               :class="tableStatus === 'AVAILABLE' ? 'available' : 'reserved'"
@@ -270,17 +277,30 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Top Right Ticket Button (Only when active ticket exists and not closed) -->
-        <button
-          v-if="showTicketButton"
-          class="top-bar-ticket-btn"
-          @click="ticketModalOpen = true"
-          title="Consulter l'addition"
-          aria-label="Voir le ticket"
-        >
-          <Receipt :size="16" class="ticket-icon" />
-          <span class="ticket-btn-label">Ticket</span>
-        </button>
+        <!-- Right: Ticket icon & Theme icon -->
+        <div class="top-bar-right">
+          <!-- Ticket icon button (to open ticket) -->
+          <button
+            v-if="showTicketButton"
+            class="top-bar-icon-btn ticket-btn"
+            @click="ticketModalOpen = true"
+            title="Consulter l'addition"
+            aria-label="Voir le ticket"
+          >
+            <Receipt :size="18" />
+          </button>
+
+          <!-- Theme icon button (dark / light mode toggle) -->
+          <button
+            class="top-bar-icon-btn theme-btn"
+            @click="toggleDark()"
+            :title="isDark ? 'Mode clair' : 'Mode sombre'"
+            aria-label="Changer de thème"
+          >
+            <Sun v-if="isDark" :size="18" />
+            <Moon v-else :size="18" />
+          </button>
+        </div>
       </div>
     </header>
 
@@ -719,20 +739,21 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 2px;
 }
-.restaurant-badge {
-  font-size: 10.5px;
-  letter-spacing: 1.2px;
+.restaurant-name {
+  font-size: 12px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #124a85;
   font-weight: 700;
   font-family: 'Bricolage Grotesque', sans-serif;
 }
-.table-title-row {
+.table-number-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 1px;
 }
-.table-title {
+.table-number-title {
   margin: 0;
   font-size: 22px;
   font-weight: 800;
@@ -756,31 +777,41 @@ onUnmounted(() => {
   color: #e08a00;
 }
 
-/* Top Right Ticket Button */
-.top-bar-ticket-btn {
-  display: inline-flex;
+/* Top Right Actions (Ticket & Theme) */
+.top-bar-right {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: #eef5fc;
-  border: 1px solid #dceaf8;
-  padding: 6px 12px;
-  border-radius: 18px;
-  color: #0b2f57;
-  font-weight: 700;
-  font-size: 13px;
+  gap: 8px;
+}
+.top-bar-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
+  border: 1px solid #d5dee8;
+  background: #ecf1f6;
+  color: #0f2133;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(11, 47, 87, 0.06);
   transition: all 0.15s ease;
 }
-.top-bar-ticket-btn:hover {
-  background: #dceaf8;
+.top-bar-icon-btn:hover {
   transform: translateY(-1px);
 }
-.ticket-icon {
+.top-bar-icon-btn.ticket-btn {
+  background: #eef5fc;
+  border-color: #dceaf8;
   color: #124a85;
 }
-.ticket-btn-label {
-  font-family: 'DM Sans', sans-serif;
+.top-bar-icon-btn.ticket-btn:hover {
+  background: #dceaf8;
+}
+.top-bar-icon-btn.theme-btn {
+  background: #ecf1f6;
+  border-color: #d5dee8;
+  color: #0f2133;
 }
 
 /* Container */
@@ -1598,5 +1629,117 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Dark Mode Overrides for Customer Page */
+:global([data-theme='dark']) .customer-page {
+  background-color: #0a1622;
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .mobile-top-bar {
+  background: #11222f;
+  border-bottom-color: #25394b;
+}
+:global([data-theme='dark']) .restaurant-name {
+  color: #89bae8;
+}
+:global([data-theme='dark']) .table-number-title {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .top-bar-icon-btn.ticket-btn {
+  background: #18314a;
+  border-color: #25394b;
+  color: #89bae8;
+}
+:global([data-theme='dark']) .top-bar-icon-btn.theme-btn {
+  background: #182d3d;
+  border-color: #25394b;
+  color: #f5b94a;
+}
+:global([data-theme='dark']) .hero-greeting {
+  color: #9fb1c3;
+}
+:global([data-theme='dark']) .hero-headline {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .hero-headline .highlight {
+  color: #4c9ae8;
+}
+:global([data-theme='dark']) .search-input {
+  background: #11222f;
+  border-color: #25394b;
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .cat-chip {
+  background: #11222f;
+  border-color: #25394b;
+  color: #9fb1c3;
+}
+:global([data-theme='dark']) .cat-chip.active {
+  background: #1b67b5;
+  border-color: #1b67b5;
+  color: #ffffff;
+}
+:global([data-theme='dark']) .customer-product-card {
+  background: #11222f;
+  border-color: #25394b;
+}
+:global([data-theme='dark']) .prod-image-wrap {
+  background: #182d3d;
+}
+:global([data-theme='dark']) .prod-name {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .prod-desc {
+  color: #9fb1c3;
+}
+:global([data-theme='dark']) .prod-price {
+  color: #89bae8;
+}
+:global([data-theme='dark']) .bottom-sheet-modal {
+  background: #11222f;
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .sheet-header {
+  border-bottom-color: #25394b;
+}
+:global([data-theme='dark']) .sheet-title {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .ticket-meta-box {
+  background: #182d3d;
+  border-color: #25394b;
+}
+:global([data-theme='dark']) .ticket-num-text {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .ticket-item-row {
+  border-bottom-color: #25394b;
+}
+:global([data-theme='dark']) .ticket-item-name {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .ticket-item-right {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .ticket-total-val {
+  color: #89bae8;
+}
+:global([data-theme='dark']) .ticket-close-btn {
+  background: #18314a;
+  border-color: #25394b;
+  color: #89bae8;
+}
+:global([data-theme='dark']) .cart-item-card {
+  background: #182d3d;
+  border-color: #25394b;
+}
+:global([data-theme='dark']) .cart-prod-name {
+  color: #eaf1f8;
+}
+:global([data-theme='dark']) .cart-note-field {
+  background: #11222f;
+  border-color: #25394b;
+  color: #eaf1f8;
 }
 </style>
