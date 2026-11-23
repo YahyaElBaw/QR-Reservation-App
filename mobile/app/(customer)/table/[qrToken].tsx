@@ -13,9 +13,9 @@ import {
   Image,
   useWindowDimensions,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation, Stack } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Receipt, Search, AlertCircle, Wifi, X, Lock, QrCode, RefreshCw } from 'lucide-react-native';
+import { Receipt, Search, AlertCircle, Wifi, X } from 'lucide-react-native';
 import { useTheme } from '../../../src/theme/useTheme';
 import { api, API_BASE_URL, setApiBaseUrl } from '../../../src/services/api';
 import { setSocketBaseUrl, useLiveUpdates } from '../../../src/services/live';
@@ -137,11 +137,44 @@ export default function TableMenuScreen() {
 
   useEffect(() => {
     if (tableData?.table) {
+      const showBtn = Boolean(
+        tableData.activeTicket &&
+        !tableData.lockedToOtherDevice &&
+        tableData.activeTicket.status !== 'CLOSED'
+      );
       navigation.setOptions({
         title: `Table ${tableData.table.number}`,
+        headerRight: showBtn
+          ? () => (
+              <TouchableOpacity
+                onPress={() => setTicketModalOpen(true)}
+                activeOpacity={0.7}
+                style={[
+                  styles.headerTicketBtn,
+                  shadow[1],
+                  {
+                    backgroundColor: c.primary50,
+                    borderColor: c.primary100,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Voir le ticket"
+              >
+                <Receipt size={16} color={c.primary700} />
+                <Text
+                  style={[
+                    styles.headerTicketText,
+                    { color: c.primary900, fontFamily: fonts.bodyBold },
+                  ]}
+                >
+                  Ticket
+                </Text>
+              </TouchableOpacity>
+            )
+          : () => null,
       });
     }
-  }, [tableData, navigation]);
+  }, [tableData, navigation, c, fonts, shadow]);
 
   const handleApplyServerIp = () => {
     if (!customServerIp.trim()) return;
@@ -228,58 +261,45 @@ export default function TableMenuScreen() {
   }
 
   const { table, activeTicket, lockedToOtherDevice } = tableData;
-
-  // 404 Full Screen: If table is closed / occupied by another device -> Clean 404 screen (nothing else shown)
-  if (lockedToOtherDevice) {
-    return (
-      <View style={[styles.errorPageContainer, { backgroundColor: c.bg }]}>
-        <View style={styles.errorPageContent}>
-          {/* Big 404 Display */}
-          <Text style={[styles.error404Text, { color: c.border, fontFamily: fonts.display }]}>
-            404
-          </Text>
-
-          {/* Minimalist Lock Icon */}
-          <View style={[styles.errorIconCircle, shadow[1], { backgroundColor: c.surface, borderColor: c.border }]}>
-            <Lock size={30} color={c.warning500} strokeWidth={2.2} />
-          </View>
-
-          {/* Heading */}
-          <Text style={[styles.errorTitle, { color: c.text, fontFamily: fonts.displaySemi }]}>
-            Table {table.number} Fermée
-          </Text>
-
-          {/* Short minimalist message */}
-          <Text style={[styles.errorDescription, { color: c.textMuted, fontFamily: fonts.body }]}>
-            Cette table est actuellement fermée ou occupée par un autre client. Aucune commande ne peut être passée depuis cet appareil.
-          </Text>
-
-          {/* Action buttons */}
-          <View style={styles.errorActions}>
-            <Button
-              title="Scanner une autre table"
-              variant="primary"
-              size="md"
-              icon={<QrCode size={16} color="#FFFFFF" />}
-              onPress={() => router.replace('/(customer)/scan')}
-            />
-
-            <Button
-              title="Actualiser"
-              variant="ghost"
-              size="sm"
-              icon={<RefreshCw size={14} color={c.textMuted} />}
-              onPress={onRefresh}
-              style={{ marginTop: 8 }}
-            />
-          </View>
-        </View>
-      </View>
-    );
-  }
+  const isTableClosed = Boolean(lockedToOtherDevice || activeTicket?.status === 'CLOSED');
+  const showTicketButton = Boolean(activeTicket && !isTableClosed && activeTicket.status !== 'CLOSED');
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
+      <Stack.Screen
+        options={{
+          title: `Table ${table.number}`,
+          headerRight: showTicketButton
+            ? () => (
+                <TouchableOpacity
+                  onPress={() => setTicketModalOpen(true)}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.headerTicketBtn,
+                    shadow[1],
+                    {
+                      backgroundColor: c.primary50,
+                      borderColor: c.primary100,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Voir le ticket"
+                >
+                  <Receipt size={16} color={c.primary700} />
+                  <Text
+                    style={[
+                      styles.headerTicketText,
+                      { color: c.primary900, fontFamily: fonts.bodyBold },
+                    ]}
+                  >
+                    Ticket
+                  </Text>
+                </TouchableOpacity>
+              )
+            : () => null,
+        }}
+      />
+
       {/* Table Header Bar */}
       <View style={[styles.tableHeader, { backgroundColor: c.surface, borderBottomColor: c.border }]}>
         <View style={styles.tableInfo}>
@@ -293,30 +313,6 @@ export default function TableMenuScreen() {
             <StatusBadge status={table.status} type="table" size="sm" />
           </View>
         </View>
-
-        {activeTicket && (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setTicketModalOpen(true)}
-            style={[
-              styles.topBarTicketBtn,
-              shadow[1],
-              { backgroundColor: c.primary50, borderColor: c.primary100 },
-            ]}
-          >
-            <View style={[styles.topBarTicketIconBox, { backgroundColor: c.primary100 }]}>
-              <Receipt size={15} color={c.primary700} />
-            </View>
-            <View style={styles.topBarTicketTextCol}>
-              <Text style={[styles.topBarTicketTitle, { color: c.primary900, fontFamily: fonts.bodyBold }]}>
-                Ticket #{activeTicket.ticketNumber}
-              </Text>
-              <Text style={[styles.topBarTicketTotal, { color: c.primary700, fontFamily: fonts.bodyMedium }]}>
-                {Number(activeTicket.total).toFixed(3)} TND
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Hero Welcome Banner */}
@@ -375,7 +371,7 @@ export default function TableMenuScreen() {
         columnWrapperStyle={styles.gridColumnWrapper}
         contentContainerStyle={[
           styles.listContent,
-          { paddingBottom: cartCount > 0 && !lockedToOtherDevice ? 110 : 30 },
+          { paddingBottom: cartCount > 0 && !isTableClosed ? 110 : 30 },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -389,7 +385,7 @@ export default function TableMenuScreen() {
             onAddToCart={(prod) => addItem(qrToken as string, prod)}
             onRemoveFromCart={(prod) => updateQuantity(qrToken as string, prod._id, -1)}
             quantityInCart={getProductCartQty(item._id)}
-            disabled={lockedToOtherDevice}
+            disabled={isTableClosed}
           />
         )}
         ListEmptyComponent={
@@ -406,14 +402,14 @@ export default function TableMenuScreen() {
         visible={!!selectedProductForDetail}
         initialQuantity={selectedProductForDetail ? getProductCartQty(selectedProductForDetail._id) : 1}
         onClose={() => setSelectedProductForDetail(null)}
-        disabled={lockedToOtherDevice}
+        disabled={isTableClosed}
         onAddToCart={(prod, qty, note) => {
           addItem(qrToken as string, prod, qty, note);
         }}
       />
 
-      {/* Floating Cart Bar (only visible when cart is non-empty and device is not locked) */}
-      {!lockedToOtherDevice && (
+      {/* Floating Cart Bar (only visible when cart is non-empty and table is not closed) */}
+      {!isTableClosed && (
         <FloatingCartBar
           itemCount={cartCount}
           totalAmount={cartTotal}
@@ -483,77 +479,18 @@ const styles = StyleSheet.create({
     fontSize: 22,
     letterSpacing: -0.3,
   },
-  topBarTicketBtn: {
+  headerTicketBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    gap: 8,
+    gap: 6,
+    marginRight: 6,
   },
-  topBarTicketIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topBarTicketTextCol: {
-    alignItems: 'flex-start',
-  },
-  topBarTicketTitle: {
-    fontSize: 12,
-    lineHeight: 14,
-  },
-  topBarTicketTotal: {
-    fontSize: 11.5,
-    lineHeight: 13,
-  },
-  errorPageContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  errorPageContent: {
-    width: '100%',
-    maxWidth: 320,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  error404Text: {
-    fontSize: 88,
-    lineHeight: 96,
-    letterSpacing: -2,
-    opacity: 0.3,
-    marginBottom: -12,
-  },
-  errorIconCircle: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 21,
-    letterSpacing: -0.3,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 8,
-  },
-  errorActions: {
-    width: '100%',
-    alignItems: 'center',
+  headerTicketText: {
+    fontSize: 13,
   },
 
   heroSection: {
