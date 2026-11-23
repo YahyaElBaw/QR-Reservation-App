@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Receipt, Search, AlertCircle, Wifi, X, Lock, Sparkles, QrCode, RefreshCw } from 'lucide-react-native';
+import { Receipt, Search, AlertCircle, Wifi, X, Lock, QrCode, RefreshCw } from 'lucide-react-native';
 import { useTheme } from '../../../src/theme/useTheme';
 import { api, API_BASE_URL, setApiBaseUrl } from '../../../src/services/api';
 import { setSocketBaseUrl, useLiveUpdates } from '../../../src/services/live';
@@ -28,6 +28,7 @@ import { ProductCard } from '../../../src/components/ProductCard';
 import { ProductDetailModal } from '../../../src/components/ProductDetailModal';
 import { FloatingCartBar } from '../../../src/components/FloatingCartBar';
 import { CartModal } from '../../../src/components/CartModal';
+import { TicketModal } from '../../../src/components/TicketModal';
 import { EmptyState } from '../../../src/components/ui/EmptyState';
 import { StatusBadge } from '../../../src/components/ui/StatusBadge';
 import type { Product, Category, Ticket } from '../../../src/types';
@@ -46,6 +47,7 @@ export default function TableMenuScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [cartModalOpen, setCartModalOpen] = useState(false);
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [serverModalOpen, setServerModalOpen] = useState(false);
   const [customServerIp, setCustomServerIp] = useState('172.16.27.169');
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
@@ -292,38 +294,30 @@ export default function TableMenuScreen() {
           </View>
         </View>
 
-        {activeTicket && activeTicket.status === 'OPEN' && (
+        {activeTicket && (
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => router.push(`/(customer)/ticket/${qrToken}`)}
+            onPress={() => setTicketModalOpen(true)}
             style={[
-              styles.activeTicketPill,
+              styles.topBarTicketBtn,
               shadow[1],
               { backgroundColor: c.primary50, borderColor: c.primary100 },
             ]}
           >
-            <Receipt size={16} color={c.primary700} style={{ marginRight: 6 }} />
-            <Text style={[styles.activeTicketText, { color: c.primary900, fontFamily: fonts.bodyBold }]}>
-              Addition en cours
-            </Text>
+            <View style={[styles.topBarTicketIconBox, { backgroundColor: c.primary100 }]}>
+              <Receipt size={15} color={c.primary700} />
+            </View>
+            <View style={styles.topBarTicketTextCol}>
+              <Text style={[styles.topBarTicketTitle, { color: c.primary900, fontFamily: fonts.bodyBold }]}>
+                Ticket #{activeTicket.ticketNumber}
+              </Text>
+              <Text style={[styles.topBarTicketTotal, { color: c.primary700, fontFamily: fonts.bodyMedium }]}>
+                {Number(activeTicket.total).toFixed(3)} TND
+              </Text>
+            </View>
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Active Session Reorder Banner for the Owner Phone */}
-      {activeTicket && activeTicket.status === 'OPEN' && (
-        <View style={[styles.ownerActiveBanner, { backgroundColor: c.primary50, borderColor: c.primary100 }]}>
-          <Sparkles size={18} color={c.primary700} style={{ marginRight: 8, marginTop: 1 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.ownerActiveBannerTitle, { color: c.primary900, fontFamily: fonts.bodyBold }]}>
-              Session active • Recommandez à tout moment
-            </Text>
-            <Text style={[styles.ownerActiveBannerText, { color: c.primary900, fontFamily: fonts.body }]}>
-              Ajoutez d'autres plats ou boissons : ils s'ajouteront directement à votre commande #{activeTicket.ticketNumber}.
-            </Text>
-          </View>
-        </View>
-      )}
 
       {/* Hero Welcome Banner */}
       <View style={styles.heroSection}>
@@ -433,8 +427,18 @@ export default function TableMenuScreen() {
         onClose={() => setCartModalOpen(false)}
         qrToken={qrToken as string}
         onOrderPlaced={() => {
-          router.push(`/(customer)/ticket/${qrToken}`);
+          setCartModalOpen(false);
+          setTicketModalOpen(true);
+          onRefresh();
         }}
+      />
+
+      {/* Ticket Modal */}
+      <TicketModal
+        visible={ticketModalOpen}
+        onClose={() => setTicketModalOpen(false)}
+        ticket={activeTicket}
+        tableNumber={table.number}
       />
     </View>
   );
@@ -479,16 +483,32 @@ const styles = StyleSheet.create({
     fontSize: 22,
     letterSpacing: -0.3,
   },
-  activeTicketPill: {
+  topBarTicketBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
     borderWidth: 1,
+    gap: 8,
   },
-  activeTicketText: {
-    fontSize: 13,
+  topBarTicketIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topBarTicketTextCol: {
+    alignItems: 'flex-start',
+  },
+  topBarTicketTitle: {
+    fontSize: 12,
+    lineHeight: 14,
+  },
+  topBarTicketTotal: {
+    fontSize: 11.5,
+    lineHeight: 13,
   },
   errorPageContainer: {
     flex: 1,
@@ -535,24 +555,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  ownerActiveBanner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginHorizontal: 16,
-    marginTop: 10,
-    marginBottom: 4,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  ownerActiveBannerTitle: {
-    fontSize: 13.5,
-    marginBottom: 2,
-  },
-  ownerActiveBannerText: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
+
   heroSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
